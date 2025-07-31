@@ -5,11 +5,14 @@ import datetime
 import json
 import os
 
+from fake_useragent import UserAgent
+ua = UserAgent()
+
 BASE_URL = "https://www.cnbcindonesia.com"
 INDEX_URL = f"{BASE_URL}/indeks"
 
 HEADERS = {
-    "User-Agent": "Mozilla/5.0"
+    "User-Agent": ua.random
 }
 
 def get_categories():

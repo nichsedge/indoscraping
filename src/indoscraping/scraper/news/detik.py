@@ -3,10 +3,10 @@ import json
 import time
 from bs4 import BeautifulSoup
 from urllib.parse import quote
-from fake_useragent import UserAgent
 from urllib.parse import quote, urlparse, parse_qs
 import requests
 
+from fake_useragent import UserAgent
 ua = UserAgent()
 
 HEADERS = {

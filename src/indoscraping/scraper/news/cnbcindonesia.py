@@ -2,6 +2,8 @@ import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin
 import datetime
+import json
+import os
 
 BASE_URL = "https://www.cnbcindonesia.com"
 INDEX_URL = f"{BASE_URL}/indeks"
@@ -91,20 +93,67 @@ def scrape_article(url):
         "url": url
     }
 
+def export_to_json(data, filename=None):
+    """Export scraped data to JSON file"""
+    if filename is None:
+        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"cnbc_scraped_{timestamp}.json"
+    
+    # Ensure the output directory exists
+    output_dir = "output"
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+    
+    filepath = os.path.join(output_dir, filename)
+    
+    with open(filepath, 'w', encoding='utf-8') as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+    
+    print(f"✅ Data exported to {filepath}")
+    return filepath
+
 def main():
     categories = get_categories()
     today = datetime.datetime.now().strftime("%Y/%m/%d")
-
+    
+    all_articles = []
+    
     # Scrape articles from all categories
-    for cat in categories[:1]:
+    for cat in categories[:1]:  # Limit to first category for demo
         print(f"\n📂 Scraping category: {cat['name']}")
         links = get_articles_for_category(cat, today)
         print(f"✅ Total articles in '{cat['name']}': {len(links)}")
         
-        # Scrape first few articles as example
-        for link in links[:3]:
-            article_data = scrape_article(link)
-            print(article_data)
+        # Scrape articles and collect data
+        category_articles = []
+        for i, link in enumerate(links[:5]):  # Limit to 5 articles for demo
+            print(f"📝 Scraping article {i+1}/{min(5, len(links))}: {link}")
+            try:
+                article_data = scrape_article(link)
+                article_data['category'] = cat['name']
+                article_data['category_slug'] = cat['slug']
+                category_articles.append(article_data)
+            except Exception as e:
+                print(f"❌ Error scraping {link}: {e}")
+        
+        all_articles.extend(category_articles)
+        print(f"✅ Scraped {len(category_articles)} articles from {cat['name']}")
+    
+    # Export all articles to JSON
+    if all_articles:
+        export_data = {
+            "metadata": {
+                "total_articles": len(all_articles),
+                "scraped_at": datetime.datetime.now().isoformat(),
+                "date_filter": today,
+                "source": "CNBC Indonesia"
+            },
+            "articles": all_articles
+        }
+        
+        export_to_json(export_data)
+    else:
+        print("⚠️ No articles were scraped")
 
 if __name__ == "__main__":
     main()

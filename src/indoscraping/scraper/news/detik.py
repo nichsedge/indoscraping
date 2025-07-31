@@ -13,7 +13,7 @@ HEADERS = {
     "User-Agent": ua.random
 }
 
-def get_kanal_urls(start_url="https://news.detik.com/indeks"):
+def get_categories_urls(start_url="https://news.detik.com/indeks"):
     """Get all kanal category URLs ending with /indeks from the top nav."""
     resp = requests.get(start_url, headers=HEADERS)
     soup = BeautifulSoup(resp.text, "html.parser")
@@ -124,7 +124,7 @@ if __name__ == "__main__":
     date = "07/28/2025"
     start_url = "https://finance.detik.com/indeks"  # can be any valid indeks URL
 
-    # kanal_urls = get_kanal_urls("https://news.detik.com/indeks")
+    # kanal_urls = get_categories_urls("https://news.detik.com/indeks")
     # print(kanal_urls)
 
     all_articles = []

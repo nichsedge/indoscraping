@@ -4,6 +4,7 @@ import time
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin
 import datetime
+import pendulum
 import json
 import os
 
@@ -46,21 +47,25 @@ def get_categories():
         
         categories = []
         for option in select.find_all("option"):
-            value = option.get("value")
+            value = option.get("value", "").strip()
             name = option.text.strip()
-            if value:
-                try:
-                    slug, cat_id = value.split("/")
-                    categories.append({
-                        "name": name,
-                        "slug": slug,
-                        "id": cat_id
-                    })
-                    logger.debug(f"Found category: {name} (slug: {slug}, id: {cat_id})")
-                except ValueError:
-                    logger.warning(f"Invalid category format: {value}")
+            
+            if not value:
+                continue  # Skip "All Channels" or empty value
+            
+            try:
+                slug, cat_id = value.split("/")
+                categories.append({
+                    "name": name,
+                    "slug": slug,
+                    "id": cat_id
+                })
+                logger.debug(f"Found category: {name} (slug: {slug}, id: {cat_id})")
+            except ValueError:
+                logger.warning(f"Invalid category format: {value}")
         
-        logger.info(f"Successfully fetched {len(categories)} categories in {time.time() - start_time:.2f}s")
+        duration = time.time() - start_time
+        logger.info(f"Successfully fetched {len(categories)} categories in {duration:.2f}s")
         return categories
     
     except requests.RequestException as e:
@@ -228,14 +233,15 @@ def main():
             logger.error("No categories found, aborting scraper")
             return
         
-        today = datetime.datetime.now().strftime("%Y/%m/%d")
+        # Use pendulum for timezone-aware date handling (D-1 in Asia/Jakarta)
+        today = pendulum.now("Asia/Jakarta").subtract(days=1).format("YYYY/MM/DD")
         logger.info(f"Scraping articles for date: {today}")
         
         all_articles = []
         total_categories = len(categories)
         
         # Scrape articles from all categories
-        for cat_idx, cat in enumerate(categories[:1], 1):  # Limit to first category for demo
+        for cat_idx, cat in enumerate(categories, 1):  # Limit to first category for demo
             category_start_time = time.time()
             logger.info(f"Processing category {cat_idx}/{total_categories}: {cat['name']}")
             
@@ -251,7 +257,7 @@ def main():
                 category_articles = []
                 total_links = min(5, len(links))  # Limit to 5 articles for demo
                 
-                for i, link in enumerate(links[:5], 1):
+                for i, link in enumerate(links, 1):
                     logger.info(f"Scraping article {i}/{total_links} in {cat['name']}: {link}")
                     
                     try:

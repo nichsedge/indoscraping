@@ -1,0 +1,22 @@
+{
+    "name": "indoscraping",
+    "version": "0.1.0",
+    "description": "Indonesian web scrapers collection",
+    "main": "index.js",
+    "type": "module",
+    "scripts": {
+        "scrape:detik": "uv run python src/indoscraping/scraper/news/detik.py",
+        "scrape:alfagift": "node src/indoscraping/scraper/retail/alfagift/index.mjs",
+        "scrape:indomaret": "node src/indoscraping/scraper/retail/indomaret/index.mjs",
+        "list:scrapers": "uv run python -c 'import os; print(\"Available scrapers:\"); [print(f\"- {f}\") for f in os.listdir(\"src/indoscraping/scraper/news\") if f.endswith(\".py\")]'"
+    },
+    "keywords": [
+        "scraper",
+        "indonesia",
+        "python",
+        "nodejs"
+    ],
+    "author": "",
+    "license": "ISC",
+    "dependencies": {}
+}

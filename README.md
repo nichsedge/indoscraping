@@ -6,50 +6,46 @@ This repository is intended for educational and research purposes. Please be res
 
 ## Installation
 
-This project contains scrapers written in both Python and JavaScript. You will need to install dependencies for both environments to use all the scrapers.
+This project is streamlined using `uv`. It manages both Python and Node.js environments.
 
-### Python Dependencies
+### Prerequisites
 
-The Python scrapers rely on packages listed in `pyproject.toml`. You can install them using `pip`:
+- [uv](https://github.com/astral-sh/uv) installed.
+- Node.js installed (for retail scrapers).
 
-```bash
-pip install -e .
-```
-
-### JavaScript Dependencies
-
-The JavaScript scrapers require Node.js. Each scraper has its own dependencies defined in a `package.json` file. To install them, navigate to the scraper's directory and run `npm install`:
+### Setup
 
 ```bash
-# Example for the alfagift scraper
-cd src/indoscraping/scraper/retail/alfagift
+# Install Python dependencies and setup venv
+uv sync
+
+# Install JavaScript dependencies (if any are added to root package.json)
 npm install
 ```
 
 ## Usage
 
-Each scraper is a standalone script that can be executed directly. The scraped data is typically saved to a JSON file in the same directory as the scraper.
+You can run all scrapers using `npm run`. This provides a unified interface for both Python and JavaScript scrapers.
 
 ### News Scrapers (Python)
 
-To run a news scraper, execute the Python script from the root of the project:
-
 ```bash
-python src/indoscraping/scraper/news/detik.py
+# Run a specific scraper
+npm run scrape:detik
 ```
 
-This will scrape articles from detik.com for the date specified within the script and save them to `detik_articles.json`.
-
-### Retail Scrapers (JavaScript)
-
-To run a retail scraper, first navigate to the scraper's directory and install the dependencies as mentioned in the Installation section. Then, run the script using Node.js:
+### Retail Scrapers (JavaScript/Node.js)
 
 ```bash
-# Navigate to the scraper directory
-cd src/indoscraping/scraper/retail/alfagift
+# Run a specific retail scraper
+npm run scrape:alfagift
+npm run scrape:indomaret
+```
 
-# Run the scraper
-node index.mjs
+### List Available Scrapers
+
+```bash
+npm run list:scrapers
 ```
 
 This will scrape product data from Alfagift and save it to `alfagift_products.json`.

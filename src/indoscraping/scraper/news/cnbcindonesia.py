@@ -1,6 +1,7 @@
 import requests
 import logging
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin
 import datetime
@@ -255,22 +256,29 @@ def main():
                 
                 # Scrape articles and collect data
                 category_articles = []
-                total_links = min(5, len(links))  # Limit to 5 articles for demo
+                # Limit links to 5 for demo as in original code
+                links_to_scrape = links[:5]
+                total_links = len(links_to_scrape)
                 
-                for i, link in enumerate(links, 1):
-                    logger.info(f"Scraping article {i}/{total_links} in {cat['name']}: {link}")
-                    
+                def scrape_and_process(link, index):
+                    logger.info(f"Scraping article {index}/{total_links} in {cat['name']}: {link}")
                     try:
                         article_data = scrape_article(link)
                         article_data['category'] = cat['name']
                         article_data['category_slug'] = cat['slug']
-                        category_articles.append(article_data)
-                        
-                        logger.debug(f"Successfully scraped article {i}/{total_links}")
-                        
+                        logger.debug(f"Successfully scraped article {index}/{total_links}")
+                        return article_data
                     except Exception as e:
                         logger.error(f"Failed to scrape article {link}: {str(e)}", exc_info=True)
-                        continue
+                        return None
+
+                with ThreadPoolExecutor(max_workers=5) as executor:
+                    future_to_url = {executor.submit(scrape_and_process, link, i): link for i, link in enumerate(links_to_scrape, 1)}
+
+                    for future in as_completed(future_to_url):
+                        result = future.result()
+                        if result:
+                            category_articles.append(result)
                 
                 all_articles.extend(category_articles)
                 category_elapsed = time.time() - category_start_time

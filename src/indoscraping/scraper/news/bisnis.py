@@ -50,11 +50,16 @@ def scrape_article(url):
             'author': '',
             'editor': '',
             'tags': [a.get_text(strip=True) for a in soup.select('ul.detailsTagList a.detailsTagLink')],
-            'content': [p.get_text(strip=True) for p in soup.select('article.detailsContent p') if p.get_text(strip=True) and len(p.get_text(strip=True)) > 20],
+            'content': [],
             'image_url': '',
             'image_alt': '',
             'image_caption': ''
         }
+
+        for p in soup.select('article.detailsContent p'):
+            text = p.get_text(strip=True)
+            if text and len(text) > 20:
+                data['content'].append(text)
 
         for item in soup.select('div.detailsAuthor div.detailsAuthorItem'):
             text = item.get_text(strip=True)

@@ -8,6 +8,7 @@
         "scrape:detik": "uv run python src/indoscraping/scraper/news/detik.py",
         "scrape:alfagift": "node src/indoscraping/scraper/retail/alfagift/index.mjs",
         "scrape:indomaret": "node src/indoscraping/scraper/retail/indomaret/index.mjs",
+        "scrape:banks": "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 uv run python -m src.indoscraping.scraper.finance.index",
         "list:scrapers": "uv run python -c 'import os; print(\"Available scrapers:\"); [print(f\"- {f}\") for f in os.listdir(\"src/indoscraping/scraper/news\") if f.endswith(\".py\")]'"
     },
     "keywords": [

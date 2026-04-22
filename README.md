@@ -34,6 +34,15 @@ You can run all scrapers using `npm run`. This provides a unified interface for 
 npm run scrape:detik
 ```
 
+### Digital Bank Rate Scrapers (Python)
+
+```bash
+# Run the bank rate scraper
+npm run scrape:banks
+# Or using the monthly script directly
+./examples/run_banks.sh
+```
+
 ### Retail Scrapers (JavaScript/Node.js)
 
 ```bash
@@ -62,6 +71,17 @@ This library supports scraping from the following websites:
 - **Detik.com**: General news portal.
 - **Kompas.com**: National and regional news.
 - **Narasi.tv**: In-depth and investigative journalism.
+
+### Finance / Digital Banks
+
+- **Jenius (BTPN)**
+- **Bank Jago**
+- **SeaBank**
+- **blu by BCA Digital**
+- **LINE Bank**
+- **Bank Neo Commerce**
+- **Krom Bank**
+- **Superbank**
 
 ### Retail
 

@@ -1,4 +1,5 @@
 import { writeFile } from 'fs/promises';
+import { randomUUID } from 'node:crypto';
 
 const BASE_URL = "https://ap-mc.klikindomaret.com/assets-klikidmgroceries/api/get/catalog-xpress/api/webapp";
 
@@ -10,10 +11,17 @@ const STORE_CONFIG = {
   districtId: 141100100
 };
 
-const HEADERS = {
+export const getHeaders = () => ({
   "accept": "application/json, text/plain, */*",
   "accept-language": "en-US,en;q=0.9",
-  "apps": "{\"app_version\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36\",\"device_class\":\"browser|browser\",\"device_family\":\"none\",\"device_id\":\"e97a1210-e2aa-4908-9ddd-12d4ac58afa6\",\"os_name\":\"Linux\",\"os_version\":\"x86_64\"}",
+  "apps": JSON.stringify({
+    "app_version": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+    "device_class": "browser|browser",
+    "device_family": "none",
+    "device_id": randomUUID(),
+    "os_name": "Linux",
+    "os_version": "x86_64"
+  }),
   "page": "unpage",
   "priority": "u=1, i",
   "sec-ch-ua": "\"Not)A;Brand\";v=\"8\", \"Chromium\";v=\"138\", \"Google Chrome\";v=\"138\"",
@@ -22,9 +30,9 @@ const HEADERS = {
   "sec-fetch-dest": "empty",
   "sec-fetch-mode": "cors",
   "sec-fetch-site": "same-site",
-  "x-correlation-id": "ce59e39f-5b13-4b89-a501-06dd911d67ac",
+  "x-correlation-id": randomUUID(),
   "Referer": "https://www.klikindomaret.com/"
-};
+});
 
 function delay(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
@@ -35,7 +43,7 @@ async function fetchCategories() {
   const url = `${BASE_URL}/category/meta?${params}`;
   
   await delay(1000); // Add delay
-  const response = await fetch(url, { headers: HEADERS });
+  const response = await fetch(url, { headers: getHeaders() });
   
   const text = await response.text();
   console.log('Response status:', response.status);
@@ -64,7 +72,7 @@ async function getProducts(page, metaCategories, categories, subCategories) {
   const url = `${BASE_URL}/search/result?${params}`;
   console.log('Fetching:', Object.fromEntries(params));
   
-  const response = await fetch(url, { headers: HEADERS });
+  const response = await fetch(url, { headers: getHeaders() });
   const data = await response.json();
   
   return data.data;
@@ -139,4 +147,7 @@ async function main() {
   }
 }
 
-main();
+import { fileURLToPath } from 'node:url';
+if (process.argv[1] && fileURLToPath(import.meta.url).endsWith(process.argv[1])) {
+  main();
+}

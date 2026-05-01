@@ -51,6 +51,16 @@ npm run scrape:alfagift
 npm run scrape:indomaret
 ```
 
+### Blibli Scraper (Python/uv)
+
+```bash
+# Run holistic category-based scraping (Discover categories -> Scrape products)
+npm run scrape:blibli-holistic
+
+# Run search-based scraping (defaults to 'xiaomi15t')
+uv run src/indoscraping/scraper/retail/blibli/index.py
+```
+
 ### List Available Scrapers
 
 ```bash
@@ -87,6 +97,7 @@ This library supports scraping from the following websites:
 
 - **Alfagift**: Online store for Alfamart.
 - **Klik Indomaret**: Online store for Indomaret.
+- **Blibli**: Major Indonesian e-commerce platform.
 
 ## Disclaimer
 

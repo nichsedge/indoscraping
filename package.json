@@ -8,7 +8,11 @@
         "scrape:detik": "uv run python src/indoscraping/scraper/news/detik.py",
         "scrape:alfagift": "node src/indoscraping/scraper/retail/alfagift/index.mjs",
         "scrape:indomaret": "node src/indoscraping/scraper/retail/indomaret/index.mjs",
+        "scrape:blibli": "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 node src/indoscraping/scraper/retail/blibli/index.mjs",
+        "scrape:blibli-categories": "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 node src/indoscraping/scraper/retail/blibli/categories.mjs",
+        "scrape:blibli-holistic": "uv run src/indoscraping/scraper/retail/blibli/holistic_scraper.py",
         "scrape:banks": "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 uv run python -m src.indoscraping.scraper.finance.index",
+        "scrape:tokped": "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 uv run python src/indoscraping/scraper/retail/tokopedia/scrape_tokped.py",
         "list:scrapers": "uv run python -c 'import os; print(\"Available scrapers:\"); [print(f\"- {f}\") for f in os.listdir(\"src/indoscraping/scraper/news\") if f.endswith(\".py\")]'"
     },
     "keywords": [
@@ -19,5 +23,8 @@
     ],
     "author": "",
     "license": "ISC",
-    "dependencies": {}
+    "dependencies": {
+        "playwright": "^1.43.1",
+        "csv-writer": "^1.6.0"
+    }
 }

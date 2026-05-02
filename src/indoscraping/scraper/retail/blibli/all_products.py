@@ -15,6 +15,8 @@ from bs4 import BeautifulSoup
 import undetected_chromedriver as uc
 import os
 import re
+import json
+import argparse
 
 def get_driver():
     options = uc.ChromeOptions()
@@ -27,7 +29,6 @@ def get_driver():
     return driver
 
 def get_categories(driver):
-    import json
     print("Fetching master categories page...")
     driver.get("https://www.blibli.com/categories")
     time.sleep(8) # Wait for page to fully load
@@ -234,11 +235,28 @@ def scrape_category(driver, category_url, category_name, level):
     return products
 
 def main():
-    driver = get_driver()
-    output_file = 'data/blibli/blibli_holistic_data.csv'
+    parser = argparse.ArgumentParser(description="Scrape all products from Blibli categories.")
+    parser.add_argument("--format", choices=["csv", "json", "jsonl"], default="csv", help="Output format (default: csv)")
+    args = parser.parse_args()
+    
+    output_format = args.format
+    output_file = f'data/blibli/blibli_holistic_data.{output_format}'
     progress_file = 'data/blibli/completed_urls.txt'
     
     os.makedirs('data/blibli', exist_ok=True)
+    
+    all_products = []
+    # Only load for 'json' format (standard array) which is memory-intensive
+    if output_format == 'json' and os.path.exists(output_file):
+        try:
+            with open(output_file, 'r', encoding='utf-8') as f:
+                all_products = json.load(f)
+            print(f"Loaded {len(all_products)} existing products from JSON.")
+        except Exception as e:
+            print(f"Warning: Could not load existing JSON: {e}")
+            all_products = []
+    elif output_format == 'jsonl':
+        print(f"Using JSONL format for memory efficiency. Appending to {output_file}")
     
     completed_urls = set()
     if os.path.exists(progress_file):
@@ -246,6 +264,7 @@ def main():
             completed_urls = set(line.strip() for line in f if line.strip())
         print(f"Resuming: Found {len(completed_urls)} already scraped categories.")
     
+    driver = get_driver()
     try:
         categories = get_categories(driver)
         
@@ -266,12 +285,25 @@ def main():
                 products = scrape_category(driver, cat_url, cat['name'], cat.get('level', 2))
                 
                 if products:
-                    df = pd.DataFrame(products)
-                    # Append to CSV
-                    mode = 'a' if os.path.exists(output_file) else 'w'
-                    header = not os.path.exists(output_file)
-                    df.to_csv(output_file, mode=mode, header=header, index=False, encoding='utf-8')
-                    print(f" -> Saved {len(products)} products to CSV.")
+                    if output_format == 'csv':
+                        df = pd.DataFrame(products)
+                        # Append to CSV
+                        mode = 'a' if os.path.exists(output_file) else 'w'
+                        header = not os.path.exists(output_file)
+                        df.to_csv(output_file, mode=mode, header=header, index=False, encoding='utf-8')
+                        print(f" -> Saved {len(products)} products to CSV.")
+                    elif output_format == 'jsonl':
+                        # Memory efficient: Append line by line
+                        with open(output_file, 'a', encoding='utf-8') as f:
+                            for p in products:
+                                f.write(json.dumps(p, ensure_ascii=False) + '\n')
+                        print(f" -> Appended {len(products)} products to JSONL.")
+                    else:
+                        # Standard JSON array (Memory intensive for large files)
+                        all_products.extend(products)
+                        with open(output_file, 'w', encoding='utf-8') as f:
+                            json.dump(all_products, f, indent=2, ensure_ascii=False)
+                        print(f" -> Updated JSON with {len(products)} new products (Total: {len(all_products)}).")
                 else:
                     print(" -> No products found on this page.")
                 

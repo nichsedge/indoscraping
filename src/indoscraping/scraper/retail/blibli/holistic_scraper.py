@@ -26,41 +26,64 @@ def get_driver():
     return driver
 
 def get_categories(driver):
-    print("Fetching home page for categories...")
-    driver.get("https://www.blibli.com/")
-    time.sleep(5) # wait for page to load
+    import json
+    print("Fetching master categories page...")
+    driver.get("https://www.blibli.com/categories")
+    time.sleep(8) # Wait for page to fully load
     
-    # Try to find category links in the DOM
     soup = BeautifulSoup(driver.page_source, "html.parser")
-    links = soup.find_all('a', href=True)
     
-    categories = []
-    seen_urls = set()
+    # Follow the logic from categories.mjs but in Python/BeautifulSoup
+    all_links = soup.select('a[class*="category__"]')
     
-    for link in links:
-        href = link['href']
-        # Blibli category URLs often contain '/c/' or '/kategori/' 
-        if '/c/' in href or '/kategori/' in href:
-            name = link.get_text(strip=True)
-            # If no text, try title or image alt
-            if not name:
-                name = link.get('title', '')
-                if not name:
-                    img = link.find('img')
-                    if img and img.get('alt'):
-                        name = img['alt']
+    hierarchy = []
+    l2_categories = []
+    
+    current_l1 = None
+    current_l2 = None
+    current_l3 = None
+    current_l4 = None
+    
+    for link in all_links:
+        name = link.get_text(strip=True)
+        href = link.get('href', '')
+        if href.startswith('/'):
+            href = 'https://www.blibli.com' + href
             
-            # Clean up URL
-            if href.startswith('/'):
-                href = 'https://www.blibli.com' + href
-                
-            if name and href not in seen_urls:
-                seen_urls.add(href)
-                # Ignore very long texts (likely not just a category name)
-                if len(name) < 50:
-                    categories.append({'name': name, 'url': href})
+        classes = link.get('class', [])
+        class_str = " ".join(classes)
+        
+        node = {'name': name, 'url': href, 'children': []}
+        
+        if 'category__item-header' in class_str:
+            current_l1 = node
+            hierarchy.append(current_l1)
+            current_l2 = current_l3 = current_l4 = None
+        elif 'level-2' in class_str and current_l1:
+            current_l1['children'].append(node)
+            current_l2 = node
+            l2_categories.append({'name': name, 'url': href, 'parent': current_l1['name']})
+            current_l3 = current_l4 = None
+        elif 'level-3' in class_str and current_l2:
+            current_l2['children'].append(node)
+            current_l3 = node
+            current_l4 = None
+        elif 'level-4' in class_str and current_l3:
+            current_l3['children'].append(node)
+            current_l4 = node
+        elif 'level-5' in class_str and current_l4:
+            current_l4['children'].append(node)
+            
+    # Save the hierarchy for validation
+    output_dir = 'data/blibli'
+    os.makedirs(output_dir, exist_ok=True)
+    with open(os.path.join(output_dir, 'categories.json'), 'w', encoding='utf-8') as f:
+        json.dump(hierarchy, f, indent=2, ensure_ascii=False)
     
-    return categories
+    print(f"Saved {len(hierarchy)} main categories to {output_dir}/categories.json")
+    print(f"Extracted {len(l2_categories)} Level 2 categories.")
+    
+    return l2_categories
 
 def scrape_category(driver, category_url, category_name):
     print(f"\nScraping category: {category_name} -> {category_url}")
@@ -171,17 +194,17 @@ def main():
     
     try:
         categories = get_categories(driver)
-        print(f"\nFound {len(categories)} categories on homepage.")
         
-        # Display the first few
-        for i, c in enumerate(categories[:10]):
-            print(f"{i+1}. {c['name']} - {c['url']}")
-            
-        # Select up to 5 top categories to test
+        # Select top 5 Level 2 categories for testing as requested
         test_categories = categories[:5]
+        
         if not test_categories:
-            print("\nNo categories found on homepage. Testing with a hardcoded one.")
+            print("\nNo categories found. Testing with a hardcoded one.")
             test_categories = [{'name': 'Handphone & Tablet', 'url': 'https://www.blibli.com/c/handphone-tablet/54593'}]
+            
+        print(f"\nScraping {len(test_categories)} sample Level 2 categories:")
+        for i, cat in enumerate(test_categories):
+            print(f"{i+1}. {cat['name']} (Parent: {cat.get('parent', 'N/A')})")
             
         for cat in test_categories:
             products = scrape_category(driver, cat['url'], cat['name'])

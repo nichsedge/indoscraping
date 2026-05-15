@@ -1,4 +1,5 @@
 import fs from 'fs';
+import { randomInt } from 'node:crypto';
 
 const headers = {
   "accept": "application/json",
@@ -15,14 +16,14 @@ const headers = {
   "sec-fetch-dest": "empty",
   "sec-fetch-mode": "cors",
   "sec-fetch-site": "same-site",
-  "trxid": Math.floor(Math.random() * 10000000000).toString(),
+  "trxid": randomInt(0, 10000000000).toString(),
   "Referer": "https://alfagift.id/"
 };
 
 async function getCategories() {
   const requestHeaders = {
     ...headers,
-    "trxid": Math.floor(Math.random() * 10000000000).toString()
+    "trxid": randomInt(0, 10000000000).toString()
   };
   
   const response = await fetch("https://webcommerce-gw.alfagift.id/v2/categories", { headers: requestHeaders });
@@ -47,7 +48,7 @@ async function getProducts(categoryId, page = 0, limit = 60) {
   // Generate new trxid for each request
   const requestHeaders = {
     ...headers,
-    "trxid": Math.floor(Math.random() * 10000000000).toString()
+    "trxid": randomInt(0, 10000000000).toString()
   };
   
   const response = await fetch(url, { headers: requestHeaders });

@@ -1,6 +1,7 @@
 import json
 import logging
 import time
+import concurrent.futures
 from urllib.parse import quote, urlparse, parse_qs
 
 import requests
@@ -228,24 +229,21 @@ if __name__ == "__main__":
     article_links = scrape_articles('https://news.detik.com/indeks', date)
     logger.info(f"Found {len(article_links)} total article links")
     
-    # Scrape individual articles
-    for i, link in enumerate(article_links, 1):
-        if link in seen_urls:
-            logger.info(f"Skipping duplicate ({i}/{len(article_links)}): {link}")
-            continue
-        
-        try:
-            logger.info(f"Processing article ({i}/{len(article_links)}): {link}")
-            article_data = scrape_detik_article(link)
-            all_articles.append(article_data)
-            seen_urls.add(link)
-            
-            # Respectful delay between requests
-            time.sleep(1)
-            
-        except Exception as e:
-            logger.error(f"Failed to scrape article {link}: {e}")
-            continue
+    # Scrape individual articles in parallel
+    unique_links = [link for link in article_links if link not in seen_urls]
+    logger.info(f"Scraping {len(unique_links)} unique articles")
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+        future_to_url = {executor.submit(scrape_detik_article, link): link for link in unique_links}
+        for future in concurrent.futures.as_completed(future_to_url):
+            link = future_to_url[future]
+            try:
+                article_data = future.result()
+                if article_data:
+                    all_articles.append(article_data)
+                    seen_urls.add(link)
+            except Exception as e:
+                logger.error(f"Failed to scrape article {link}: {e}")
     
     # Save results
     try:

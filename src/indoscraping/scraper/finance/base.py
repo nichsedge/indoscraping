@@ -223,12 +223,18 @@ def collect_strings(node: Any) -> list[str]:
     return values
 
 
+_SECTION_TERMINATOR_RE = re.compile(
+    r"(?P<body>.*?)(?:\n\d+\)\s|\n[A-Z]\.\s|$)",
+    re.IGNORECASE | re.DOTALL,
+)
+
+
 def find_table_after_label(text: str, label: str) -> str:
-    pattern = re.compile(
-        rf"{re.escape(label)}(?P<body>.*?)(?:\n\d+\)\s|\n[A-Z]\.\s|$)",
-        re.IGNORECASE | re.DOTALL,
-    )
-    match = pattern.search(text)
+    match = re.search(re.escape(label), text, re.IGNORECASE)
     if not match:
         raise SourceChangedError(f"Could not find section {label!r}")
-    return match.group("body")
+
+    match_body = _SECTION_TERMINATOR_RE.search(text, pos=match.end())
+    if not match_body:
+        raise SourceChangedError(f"Could not find end of section {label!r}")
+    return match_body.group("body")

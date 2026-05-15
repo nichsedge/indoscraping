@@ -66,8 +66,9 @@ def scrape_blibli():
                 # Priority list for smartphone search
                 priorities = ["Android", "iOS", "Smartphone", "Handphone", "Handphone & Tablet"]
                 found_priority = None
+                label_set = set(labels)
                 for p in priorities:
-                    if p in labels:
+                    if p in label_set:
                         found_priority = p
                         break
                 

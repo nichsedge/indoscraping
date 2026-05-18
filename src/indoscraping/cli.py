@@ -40,7 +40,7 @@ SCRAPERS: Dict[str, Dict[str, Any]] = {
         "name": "CNBC Indonesia Scraper",
         "category": "News",
         "lang": "Python",
-        "cmd": ["python", "src/indoscraping/scraper/news/cnbcindonesia.py"],
+        "cmd": ["python", "src/indoscraping/scraper/news/cnbc.py"],
         "desc": "Extracts news, timestamps, and tags from CNBC Indonesia.",
         "output_path": "data/news/cnbc/latest.json"
     },
@@ -48,7 +48,7 @@ SCRAPERS: Dict[str, Dict[str, Any]] = {
         "name": "CNN Indonesia Scraper",
         "category": "News",
         "lang": "Python",
-        "cmd": ["python", "src/indoscraping/scraper/news/cnnindonesia.py"],
+        "cmd": ["python", "src/indoscraping/scraper/news/cnn.py"],
         "desc": "Scrapes national and international news from CNN Indonesia.",
         "output_path": "data/news/cnn/latest.json"
     },
@@ -73,7 +73,7 @@ SCRAPERS: Dict[str, Dict[str, Any]] = {
         "name": "Alfagift Scraper",
         "category": "Retail",
         "lang": "Python",
-        "cmd": ["python", "src/indoscraping/scraper/retail/alfagift/scraper.py"],
+        "cmd": ["python", "src/indoscraping/scraper/retail/alfagift.py"],
         "desc": "Scrapes categories and products from the Alfamart Alfagift app.",
         "output_path": "data/retail/alfagift/latest.json"
     },
@@ -81,7 +81,7 @@ SCRAPERS: Dict[str, Dict[str, Any]] = {
         "name": "Klik Indomaret Scraper",
         "category": "Retail",
         "lang": "Python",
-        "cmd": ["python", "src/indoscraping/scraper/retail/indomaret/scraper.py"],
+        "cmd": ["python", "src/indoscraping/scraper/retail/indomaret.py"],
         "desc": "Scrapes products and catalog details from KlikIndomaret.",
         "output_path": "data/retail/indomaret/latest.json"
     },
@@ -89,7 +89,7 @@ SCRAPERS: Dict[str, Dict[str, Any]] = {
         "name": "Blibli Search Scraper",
         "category": "Retail",
         "lang": "Python (Playwright)",
-        "cmd": ["python", "src/indoscraping/scraper/retail/blibli/scraper.py"],
+        "cmd": ["python", "src/indoscraping/scraper/retail/blibli_search.py"],
         "desc": "Scrapes search results from Blibli using Playwright.",
         "output_path": "data/retail/blibli/latest.json",
         "env": {"PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1"}
@@ -98,7 +98,7 @@ SCRAPERS: Dict[str, Dict[str, Any]] = {
         "name": "Blibli Holistic Scraper",
         "category": "Retail",
         "lang": "Python",
-        "cmd": ["python", "src/indoscraping/scraper/retail/blibli/all_products.py"],
+        "cmd": ["python", "src/indoscraping/scraper/retail/blibli_holistic.py"],
         "desc": "Performs holistic category discovery and product scraping on Blibli.",
         "output_path": "data/blibli/blibli_c2_priority_list.csv"
     },
@@ -106,7 +106,7 @@ SCRAPERS: Dict[str, Dict[str, Any]] = {
         "name": "Tokopedia Holistic Scraper",
         "category": "Retail",
         "lang": "Python (Selenium)",
-        "cmd": ["python", "src/indoscraping/scraper/retail/tokopedia/tokped_all_products.py"],
+        "cmd": ["python", "src/indoscraping/scraper/retail/tokopedia.py"],
         "desc": "Scrapes Tokopedia category tree and product details using Undetected ChromeDriver.",
         "output_path": "data/tokopedia/tokopedia_holistic_data.csv"
     },
@@ -115,7 +115,7 @@ SCRAPERS: Dict[str, Dict[str, Any]] = {
         "name": "Digital Bank Rates Scraper",
         "category": "Finance",
         "lang": "Python (Playwright)",
-        "cmd": ["python", "-m", "src.indoscraping.scraper.finance.index"],
+        "cmd": ["python", "-m", "src.indoscraping.scraper.finance.rates"],
         "desc": "Scrapes interest rates of Jenius, Jago, SeaBank, blu, LineBank, Neo, Krom, Superbank.",
         "output_path": "data/latest.json",
         "env": {"PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1"}

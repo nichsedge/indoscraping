@@ -91,14 +91,16 @@ All news crawlers accept standard argparse parameter structures for dynamic over
 - **News Scrapers**: [src/indoscraping/scraper/news/](file:///home/al/Projects/indoscraping/src/indoscraping/scraper/news/)
   - `kompas.py` — Beautifulsoup4 crawler, parses indices.
   - `detik.py` — Handles general indices.
-  - `cnbcindonesia.py` — High-performance crawler using `ThreadPoolExecutor`.
-  - `cnnindonesia.py` — Standard BS4 parser.
+  - `cnbc.py` — High-performance crawler using `ThreadPoolExecutor` (formerly `cnbcindonesia.py`).
+  - `cnn.py` — Standard BS4 parser (formerly `cnnindonesia.py`).
   - `bisnis.py` — Extracts business indices.
-  - `narasi.py` — **High-performance API scraper using `curl_cffi` to mimic Google Chrome handshakes.**
+  - `narasi.py` — High-performance API scraper using `curl_cffi` to mimic Google Chrome handshakes.
 - **Finance Scrapers**: [src/indoscraping/scraper/finance/](file:///home/al/Projects/indoscraping/src/indoscraping/scraper/finance/)
-  - Uses `BaseScraper` class, custom models (`models.py`), and executes rate crawls via Playwright.
+  - `rates.py` — Executes interest rate crawls via Playwright (formerly `index.py`).
+  - Uses `BaseScraper` class and custom models (`models.py`).
 - **Retail Scrapers**: [src/indoscraping/scraper/retail/](file:///home/al/Projects/indoscraping/src/indoscraping/scraper/retail/)
-  - `alfagift/index.mjs` — Scrapes Alfamart API.
-  - `indomaret/index.mjs` — Scrapes KlikIndomaret API.
-  - `blibli/` — Playwright search results and Python category scrapers.
-  - `tokopedia/` — Selenium/Undetected Chromedriver category crawlers.
+  - `alfagift.py` — Impersonated API scraper via `curl_cffi` with resilience checkpointing.
+  - `indomaret.py` — Impersonated API scraper via `curl_cffi` with resilience checkpointing.
+  - `blibli_search.py` — Playwright search results crawler with retry logic.
+  - `blibli_holistic.py` — Python category discovery and product scraper.
+  - `tokopedia.py` — Selenium/Undetected Chromedriver category crawler.

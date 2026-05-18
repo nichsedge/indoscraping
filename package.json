@@ -15,6 +15,7 @@
         "scrape:banks": "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 uv run python -m src.indoscraping.scraper.finance.index",
         "scrape:tokped": "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 uv run python src/indoscraping/scraper/retail/tokopedia/scrape_tokped.py",
         "scrape:tokped-holistic": "uv run src/indoscraping/scraper/retail/tokopedia/holistic_scraper.py",
+        "scrape:tokped-all": "uv run src/indoscraping/scraper/retail/tokopedia/tokped_all_products.py",
         "list:scrapers": "uv run python -c 'import os; print(\"Available scrapers:\"); [print(f\"- {f}\") for f in os.listdir(\"src/indoscraping/scraper/news\") if f.endswith(\".py\")]'"
     },
     "keywords": [

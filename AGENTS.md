@@ -31,11 +31,15 @@ uv run indoscraping status
 # 3. Execute a specific scraper directly
 uv run indoscraping run <scraper_id> [optional_arguments]
 
+# 4. Batch execute multiple scrapers sequentially
+uv run indoscraping run-all [--category <category>] [--limit-categories <N>] [--limit-articles <M>]
+
 # Examples:
 uv run indoscraping run cnbc --limit-categories 1 --limit-articles 3
 uv run indoscraping run detik --limit-articles 5
-uv run indoscraping run narasi --limit-articles 2
-uv run indoscraping run banks
+uv run indoscraping run-all --category news
+uv run indoscraping run-all --category finance
+uv run indoscraping run-all --limit-articles 1 --limit-categories 1
 ```
 
 ---

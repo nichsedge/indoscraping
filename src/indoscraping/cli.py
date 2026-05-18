@@ -72,24 +72,24 @@ SCRAPERS: Dict[str, Dict[str, Any]] = {
     "alfagift": {
         "name": "Alfagift Scraper",
         "category": "Retail",
-        "lang": "Node.js",
-        "cmd": ["node", "src/indoscraping/scraper/retail/alfagift/index.mjs"],
+        "lang": "Python",
+        "cmd": ["python", "src/indoscraping/scraper/retail/alfagift/scraper.py"],
         "desc": "Scrapes categories and products from the Alfamart Alfagift app.",
         "output_path": "data/retail/alfagift/latest.json"
     },
     "indomaret": {
         "name": "Klik Indomaret Scraper",
         "category": "Retail",
-        "lang": "Node.js",
-        "cmd": ["node", "src/indoscraping/scraper/retail/indomaret/index.mjs"],
+        "lang": "Python",
+        "cmd": ["python", "src/indoscraping/scraper/retail/indomaret/scraper.py"],
         "desc": "Scrapes products and catalog details from KlikIndomaret.",
         "output_path": "data/retail/indomaret/latest.json"
     },
     "blibli-search": {
         "name": "Blibli Search Scraper",
         "category": "Retail",
-        "lang": "Node.js (Playwright)",
-        "cmd": ["node", "src/indoscraping/scraper/retail/blibli/all_searched_products_pw.mjs"],
+        "lang": "Python (Playwright)",
+        "cmd": ["python", "src/indoscraping/scraper/retail/blibli/scraper.py"],
         "desc": "Scrapes search results from Blibli using Playwright.",
         "output_path": "data/retail/blibli/latest.json",
         "env": {"PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1"}
@@ -316,7 +316,7 @@ def interactive_dashboard() -> None:
         print_banner()
 
         console.print(Align.center("[bold white]====== MAIN MENU ======[/bold white]\n"))
-        console.print("  1. [bold cyan]List & Run Scrapers[/bold cyan] (Individual Execution)")
+        console.print("  1. [bold cyan]List & Run Scrapers[/bold cyan] (Individual / Batch Execution)")
         console.print("  2. [bold cyan]View Output Data & Statistics[/bold cyan]")
         console.print("  3. [bold cyan]Help & Documentation[/bold cyan]")
         console.print("  q. [bold red]Quit / Exit[/bold red]")
@@ -332,11 +332,63 @@ def interactive_dashboard() -> None:
                 console.print(table)
                 console.print()
                 console.print("[dim]Enter the Scraper ID to start running, or 'b' to go back.[/dim]")
+                console.print("[dim]Or run multiple: 'all', 'all:news', 'all:retail', 'all:finance'[/dim]")
                 scraper_choice = console.input("[bold yellow]Run Scraper ID: [/bold yellow]").strip()
 
                 if scraper_choice.lower() == "b":
                     break
                 
+                if scraper_choice.lower() == "all" or scraper_choice.lower().startswith("all:"):
+                    # Batch execution
+                    category_filter = None
+                    if ":" in scraper_choice:
+                        category_filter = scraper_choice.split(":")[1].strip().lower()
+                    
+                    scrapers_to_run = []
+                    for sid, info in SCRAPERS.items():
+                        if category_filter and info["category"].lower() != category_filter:
+                            continue
+                        scrapers_to_run.append((sid, info))
+                    
+                    if not scrapers_to_run:
+                        console.print(f"[bold red]No scrapers found matching category filter '{category_filter}'.[/bold red]")
+                        time.sleep(1.5)
+                        continue
+                    
+                    console.clear()
+                    console.print(Panel(
+                        f"[bold cyan]Starting batch execution of {len(scrapers_to_run)} scrapers...[/bold cyan]",
+                        border_style="cyan"
+                    ))
+                    
+                    success_count = 0
+                    failed_scrapers = []
+                    
+                    for sid, info in scrapers_to_run:
+                        console.print(f"\n[bold yellow]>>> [{info['category']}] Executing {info['name']} ({sid})...[/bold yellow]")
+                        # For batch interactive run, we add brief smoketest parameters to news crawlers so they complete rapidly.
+                        extra_args = []
+                        if info["category"] == "News" or sid in ["alfagift", "indomaret"]:
+                            extra_args.extend(["--limit-categories", "1", "--limit-articles", "2"])
+                        elif sid in ["detik", "narasi", "bisnis", "cnn", "kompas", "cnbc"]:
+                            extra_args.extend(["--limit-articles", "2"])
+                            
+                        success = run_scraper_subprocess(sid, extra_args)
+                        if success:
+                            success_count += 1
+                        else:
+                            failed_scrapers.append(sid)
+                    
+                    console.print(Panel(
+                        f"[bold green]Batch run complete.[/bold green]\n"
+                        f"[bold white]Success Rate:[/bold white] [green]{success_count}/{len(scrapers_to_run)}[/green]\n"
+                        f"[bold white]Failed Scrapers:[/bold white] {', '.join(failed_scrapers) if failed_scrapers else '[green]None[/green]'}",
+                        border_style="green",
+                        title="Batch Run Summary"
+                    ))
+                    console.input("\n[dim]Press Enter to continue...[/dim]")
+                    continue
+
                 if scraper_choice in SCRAPERS:
                     console.clear()
                     run_scraper_subprocess(scraper_choice)
@@ -386,6 +438,12 @@ def main() -> None:
     run_parser.add_argument("scraper_id", choices=list(SCRAPERS.keys()), help="ID of the scraper to run")
     run_parser.add_argument("scraper_args", nargs=argparse.REMAINDER, help="Additional optional arguments for the scraper script")
 
+    # Run-all command
+    run_all_parser = subparsers.add_parser("run-all", help="Run all scrapers sequentially")
+    run_all_parser.add_argument("--category", choices=["news", "retail", "finance"], type=str.lower, help="Filter scrapers by category")
+    run_all_parser.add_argument("--limit-categories", type=int, help="Override --limit-categories argument for news scrapers")
+    run_all_parser.add_argument("--limit-articles", type=int, help="Override --limit-articles argument for news/retail scrapers")
+
     # Status command
     subparsers.add_parser("status", help="Show scraped output files and data metrics")
 
@@ -397,6 +455,49 @@ def main() -> None:
     elif args.command == "run":
         success = run_scraper_subprocess(args.scraper_id, args.scraper_args)
         sys.exit(0 if success else 1)
+    elif args.command == "run-all":
+        # Identify scrapers to run
+        scrapers_to_run = []
+        for sid, info in SCRAPERS.items():
+            if args.category and info["category"].lower() != args.category.lower():
+                continue
+            scrapers_to_run.append((sid, info))
+
+        if not scrapers_to_run:
+            console.print("[bold red]No scrapers found matching the category filter.[/bold red]")
+            sys.exit(1)
+
+        console.print(Panel(
+            f"[bold cyan]Running {len(scrapers_to_run)} scrapers sequentially...[/bold cyan]",
+            border_style="cyan"
+        ))
+
+        success_count = 0
+        failed_scrapers = []
+
+        for sid, info in scrapers_to_run:
+            extra_args = []
+            if args.limit_categories and (info["category"] == "News" or sid in ["alfagift", "indomaret"]):
+                extra_args.extend(["--limit-categories", str(args.limit_categories)])
+            if args.limit_articles:
+                if info["category"] == "News" or sid in ["detik", "narasi", "bisnis", "cnn", "kompas", "cnbc", "alfagift", "indomaret"]:
+                    extra_args.extend(["--limit-articles", str(args.limit_articles)])
+            
+            console.print(f"\n[bold yellow]>>> [{info['category']}] Executing {info['name']} ({sid})...[/bold yellow]")
+            success = run_scraper_subprocess(sid, extra_args)
+            if success:
+                success_count += 1
+            else:
+                failed_scrapers.append(sid)
+
+        console.print(Panel(
+            f"[bold green]Batch run complete.[/bold green]\n"
+            f"[bold white]Success Rate:[/bold white] [green]{success_count}/{len(scrapers_to_run)}[/green]\n"
+            f"[bold white]Failed Scrapers:[/bold white] {', '.join(failed_scrapers) if failed_scrapers else '[green]None[/green]'}",
+            border_style="green",
+            title="Batch Run Summary"
+        ))
+        sys.exit(0 if len(failed_scrapers) == 0 else 1)
     elif args.command == "status":
         view_output_statistics()
     else:

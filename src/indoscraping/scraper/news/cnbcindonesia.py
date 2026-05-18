@@ -41,11 +41,22 @@ def get_categories():
         logger.debug(f"Categories page response status: {res.status_code}")
         
         soup = BeautifulSoup(res.text, "html.parser")
-        select = soup.find("select", {"onchange": "articleKanalHandle(this)"})
+        
+        select = None
+        for s in soup.find_all("select"):
+            oc = s.get("onchange", "")
+            if oc and "articleKanalHandle(this)" in oc:
+                select = s
+                break
         
         if not select:
-            logger.warning("Could not find category select element")
-            return []
+            logger.warning("Could not find category select element, returning defaults")
+            return [
+                {"name": "MARKET", "slug": "market", "id": "5"},
+                {"name": "NEWS", "slug": "news", "id": "3"},
+                {"name": "ENTREPRENEUR", "slug": "entrepreneur", "id": "9"},
+                {"name": "SHARIA", "slug": "syariah", "id": "10"}
+            ]
         
         categories = []
         for option in select.find_all("option"):
@@ -226,7 +237,21 @@ def export_to_json(data, filename=None):
         raise
 
 def main():
-    logger.info("Starting CNBC Indonesia scraper")
+    import argparse
+    import os
+
+    # Default to D-1 (yesterday)
+    default_date = pendulum.now("Asia/Jakarta").subtract(days=1).format("YYYY/MM/DD")
+
+    parser = argparse.ArgumentParser(description="Scrape articles from CNBC Indonesia")
+    parser.add_argument("--date", default=default_date, help="Date to scrape in YYYY/MM/DD format (default: yesterday)")
+    parser.add_argument("--limit-categories", type=int, default=1, help="Max categories to scrape (default: 1)")
+    parser.add_argument("--limit-articles", type=int, default=5, help="Max articles per category to scrape (default: 5)")
+    parser.add_argument("--output", default="data/news/cnbc/latest.json", help="Output path for the latest scraping results")
+    args = parser.parse_args()
+
+    date_str = args.date
+    logger.info(f"Starting CNBC Indonesia scraper for date: {date_str}")
     overall_start_time = time.time()
     
     try:
@@ -235,20 +260,17 @@ def main():
             logger.error("No categories found, aborting scraper")
             return
         
-        # Use pendulum for timezone-aware date handling (D-1 in Asia/Jakarta)
-        today = pendulum.now("Asia/Jakarta").subtract(days=1).format("YYYY/MM/DD")
-        logger.info(f"Scraping articles for date: {today}")
-        
         all_articles = []
-        total_categories = len(categories)
+        selected_categories = categories[:args.limit_categories]
+        total_categories = len(selected_categories)
         
-        # Scrape articles from all categories
-        for cat_idx, cat in enumerate(categories, 1):  # Limit to first category for demo
+        # Scrape articles from selected categories
+        for cat_idx, cat in enumerate(selected_categories, 1):
             category_start_time = time.time()
             logger.info(f"Processing category {cat_idx}/{total_categories}: {cat['name']}")
             
             try:
-                links = get_articles_for_category(cat, today)
+                links = get_articles_for_category(cat, date_str)
                 logger.info(f"Found {len(links)} articles in category '{cat['name']}'")
                 
                 if not links:
@@ -257,8 +279,7 @@ def main():
                 
                 # Scrape articles and collect data
                 category_articles = []
-                # Limit links to 5 for demo as in original code
-                links_to_scrape = links[:5]
+                links_to_scrape = links[:args.limit_articles]
                 total_links = len(links_to_scrape)
                 
                 def scrape_and_process(link, index):
@@ -297,13 +318,26 @@ def main():
                 "metadata": {
                     "total_articles": len(all_articles),
                     "scraped_at": datetime.datetime.now().isoformat(),
-                    "date_filter": today,
+                    "date_filter": date_str,
                     "source": "CNBC Indonesia"
                 },
                 "articles": all_articles
             }
             
-            export_to_json(export_data)
+            # Save to standard output path
+            output_path = args.output
+            os.makedirs(os.path.dirname(output_path), exist_ok=True)
+            with open(output_path, "w", encoding="utf-8") as f:
+                json.dump(export_data, f, ensure_ascii=False, indent=2)
+            logger.info(f"Exported {len(all_articles)} articles to {output_path}")
+
+            # Save historical snapshot
+            safe_date_str = date_str.replace("/", "-")
+            history_path = f"data/news/cnbc/history/{safe_date_str}.json"
+            os.makedirs(os.path.dirname(history_path), exist_ok=True)
+            with open(history_path, "w", encoding="utf-8") as f:
+                json.dump(export_data, f, ensure_ascii=False, indent=2)
+            logger.info(f"Saved historical snapshot to {history_path}")
         else:
             logger.warning("No articles were scraped")
     

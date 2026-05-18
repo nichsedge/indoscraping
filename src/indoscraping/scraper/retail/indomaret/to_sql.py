@@ -6,7 +6,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Load and clean data
-df = pd.read_json("klikindomaret_products.json")
+json_path = "data/retail/indomaret/latest.json" if os.path.exists("data/retail/indomaret/latest.json") else "klikindomaret_products.json"
+df = pd.read_json(json_path)
 
 df.drop(
     ["descriptionList", "promoTagList", "promo", "promoText", "pairProducts"],

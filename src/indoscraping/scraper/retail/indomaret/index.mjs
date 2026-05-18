@@ -1,4 +1,4 @@
-import { writeFile } from 'fs/promises';
+import { writeFile, mkdir } from 'fs/promises';
 import { randomUUID } from 'node:crypto';
 
 const BASE_URL = "https://ap-mc.klikindomaret.com/assets-klikidmgroceries/api/get/catalog-xpress/api/webapp";
@@ -139,8 +139,21 @@ async function main() {
     }
     
     console.log(`\nTotal products collected: ${allArr.length}`);
-    await writeFile('klikindomaret_products.json', JSON.stringify(allArr, null, 2));
-    console.log('Products saved to klikindomaret_products.json');
+    
+    const dateStr = new Date().toISOString().split('T')[0];
+    const outputDir = 'data/retail/indomaret';
+    const historyDir = 'data/retail/indomaret/history';
+
+    await mkdir(outputDir, { recursive: true });
+    await mkdir(historyDir, { recursive: true });
+
+    const latestPath = `${outputDir}/latest.json`;
+    const historyPath = `${historyDir}/${dateStr}.json`;
+
+    await writeFile(latestPath, JSON.stringify(allArr, null, 2));
+    await writeFile(historyPath, JSON.stringify(allArr, null, 2));
+    console.log(`Products saved to ${latestPath}`);
+    console.log(`Products saved to history snapshot: ${historyPath}`);
     
   } catch (error) {
     console.error('Error:', error);

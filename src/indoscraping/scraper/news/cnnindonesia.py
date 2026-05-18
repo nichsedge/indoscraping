@@ -50,17 +50,56 @@ def scrape_article(url):
     }
 
 def main():
+    import argparse
+    import os
+
+    # Default to current date in YYYY/MM/DD format
+    default_date = datetime.now().strftime("%Y/%m/%d")
+
+    parser = argparse.ArgumentParser(description="Scrape articles from CNN Indonesia")
+    parser.add_argument("--date", default=default_date, help="Date to scrape in YYYY/MM/DD format (default: today)")
+    parser.add_argument("--limit-categories", type=int, default=1, help="Max categories to scrape (default: 1)")
+    parser.add_argument("--limit-articles", type=int, default=3, help="Max articles per category to scrape (default: 3)")
+    parser.add_argument("--output", default="data/news/cnn/latest.json", help="Output path for the latest scraping results")
+    args = parser.parse_args()
+
+    # Override the global DATE variable dynamically
+    global DATE
+    DATE = args.date
+
     all_articles = []
     categories = get_categories()
-    for cat in categories[:1]:  # limit to first category
-        links = get_article_links(cat['label'], cat['id'], max_pages=1)
-        for link in links[:3]:
-            article = scrape_article(link)
-            all_articles.append(article)
+    selected_categories = categories[:args.limit_categories]
     
-    with open("cnn_articles.json", "w", encoding="utf-8") as f:
+    for cat in selected_categories:
+        print(f"Processing category: {cat['label']}")
+        links = get_article_links(cat['label'], cat['id'], max_pages=1)
+        selected_links = links[:args.limit_articles]
+        
+        for link in selected_links:
+            try:
+                article = scrape_article(link)
+                article['category'] = cat['label']
+                all_articles.append(article)
+            except Exception as e:
+                print(f"Error scraping {link}: {e}")
+    
+    # Standardized output folders
+    output_path = args.output
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+    
+    with open(output_path, "w", encoding="utf-8") as f:
         json.dump(all_articles, f, ensure_ascii=False, indent=2)
-    print(f"Saved {len(all_articles)} articles to cnn_articles.json")
+    print(f"Exported {len(all_articles)} articles to {output_path}")
+
+    # Save historical snapshot
+    # Convert date format to use dashes for file safety
+    safe_date_str = DATE.replace("/", "-")
+    history_path = f"data/news/cnn/history/{safe_date_str}.json"
+    os.makedirs(os.path.dirname(history_path), exist_ok=True)
+    with open(history_path, "w", encoding="utf-8") as f:
+        json.dump(all_articles, f, ensure_ascii=False, indent=2)
+    print(f"Saved historical snapshot to {history_path}")
 
 if __name__ == "__main__":
     main()

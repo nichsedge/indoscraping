@@ -77,8 +77,25 @@ async function scrapeAllProducts() {
   }
   
   // Export to JSON
-  fs.writeFileSync('alfagift_products.json', JSON.stringify(allProducts, null, 2));
+  const dateStr = new Date().toISOString().split('T')[0];
+  const outputDir = 'data/retail/alfagift';
+  const historyDir = 'data/retail/alfagift/history';
+
+  if (!fs.existsSync(outputDir)) {
+    fs.mkdirSync(outputDir, { recursive: true });
+  }
+  if (!fs.existsSync(historyDir)) {
+    fs.mkdirSync(historyDir, { recursive: true });
+  }
+
+  const latestPath = `${outputDir}/latest.json`;
+  const historyPath = `${historyDir}/${dateStr}.json`;
+
+  fs.writeFileSync(latestPath, JSON.stringify(allProducts, null, 2));
+  fs.writeFileSync(historyPath, JSON.stringify(allProducts, null, 2));
   console.log(`Total products scraped: ${allProducts.length}`);
+  console.log(`Saved latest to ${latestPath}`);
+  console.log(`Saved history snapshot to ${historyPath}`);
 }
 
 scrapeAllProducts().catch(console.error);

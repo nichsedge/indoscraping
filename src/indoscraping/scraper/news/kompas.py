@@ -7,11 +7,16 @@ BASE_URL = "https://indeks.kompas.com/"
 DATE = "2025-07-23"
 
 def get_categories():
-    response = requests.get(BASE_URL)
-    soup = BeautifulSoup(response.text, "html.parser")
-    select = soup.find("select", class_="form__select dropdown_sites")
-    categories = [option.get("value") for option in select.find_all("option") if option.get("value") != "all"]
-    return list(set(categories))
+    try:
+        response = requests.get(BASE_URL, headers={"User-Agent": "Mozilla/5.0"}, timeout=15)
+        soup = BeautifulSoup(response.text, "html.parser")
+        select = soup.find("select", id="site") or soup.find("select", class_="form__select dropdown_sites")
+        if not select:
+            return ["news", "nasional", "regional", "megapolitan"]
+        categories = [option.get("value") for option in select.find_all("option") if option.get("value") and option.get("value") != "all"]
+        return list(set(categories))
+    except Exception:
+        return ["news", "nasional", "regional", "megapolitan"]
 
 def get_article_links(category, date):
     page = 1
@@ -68,25 +73,50 @@ def scrape_kompas_article(url):
         return None
 
 def main():
+    import argparse
+    import os
+
+    # Default to current date in YYYY-MM-DD format
+    default_date = datetime.now().strftime("%Y-%m-%d")
+
+    parser = argparse.ArgumentParser(description="Scrape articles from Kompas.com")
+    parser.add_argument("--date", default=default_date, help="Date to scrape in YYYY-MM-DD format (default: today)")
+    parser.add_argument("--limit-categories", type=int, default=1, help="Max categories to scrape (default: 1)")
+    parser.add_argument("--limit-articles", type=int, default=2, help="Max articles per category to scrape (default: 2)")
+    parser.add_argument("--output", default="data/news/kompas/latest.json", help="Output path for the latest scraping results")
+    args = parser.parse_args()
+
+    date_str = args.date
     categories = get_categories()
     all_articles = []
     
-    for category in categories[:1]:
+    selected_categories = categories[:args.limit_categories]
+    for category in selected_categories:
         print(f"Processing category: {category}")
-        article_links = get_article_links(category, DATE)
+        article_links = get_article_links(category, date_str)
         
-        for link in article_links[:2]:
+        selected_links = article_links[:args.limit_articles]
+        for link in selected_links:
             article_data = scrape_kompas_article(link)
             if article_data:
                 article_data["category"] = category
                 all_articles.append(article_data)
     
-    # Export to JSON
-    filename = f"kompas_articles_{DATE}.json"
-    with open(filename, "w", encoding="utf-8") as f:
-        json.dump(all_articles, f, ensure_ascii=False, indent=2)
+    # Standardized output folders
+    output_path = args.output
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
     
-    print(f"Exported {len(all_articles)} articles to {filename}")
+    # Save latest results
+    with open(output_path, "w", encoding="utf-8") as f:
+        json.dump(all_articles, f, ensure_ascii=False, indent=2)
+    print(f"Exported {len(all_articles)} articles to {output_path}")
+
+    # Save historical snapshot
+    history_path = f"data/news/kompas/history/{date_str}.json"
+    os.makedirs(os.path.dirname(history_path), exist_ok=True)
+    with open(history_path, "w", encoding="utf-8") as f:
+        json.dump(all_articles, f, ensure_ascii=False, indent=2)
+    print(f"Saved historical snapshot to {history_path}")
 
 if __name__ == "__main__":
     main()

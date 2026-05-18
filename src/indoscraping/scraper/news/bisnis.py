@@ -80,18 +80,56 @@ def scrape_article(url):
     except Exception as e:
         return {'url': url, 'error': str(e)}
 
-def save_to_file(data, filename='bisnis_articles.json'):
-    with open(filename, 'w', encoding='utf-8') as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
-    print(f"Saved {len(data)} articles to {filename}")
+def main():
+    import argparse
+    import os
+
+    # Default to current date in YYYY-MM-DD format
+    default_date = datetime.now().strftime("%Y-%m-%d")
+
+    parser = argparse.ArgumentParser(description="Scrape articles from Bisnis.com")
+    parser.add_argument("--date", default=default_date, help="Date to scrape in YYYY-MM-DD format (default: today)")
+    parser.add_argument("--limit-categories", type=int, default=1, help="Max categories to scrape (default: 1)")
+    parser.add_argument("--limit-articles", type=int, default=2, help="Max articles per category to scrape (default: 2)")
+    parser.add_argument("--output", default="data/news/bisnis/latest.json", help="Output path for the latest scraping results")
+    args = parser.parse_args()
+
+    date_str = args.date
+    categories = get_categories()
+    all_articles = []
+    
+    selected_categories = list(categories.keys())[:args.limit_categories]
+    if not selected_categories:
+        selected_categories = ["Ekonomi"]
+        categories["Ekonomi"] = "43"
+
+    for cat_name in selected_categories:
+        cat_id = categories.get(cat_name, "43")
+        print(f"Processing category: {cat_name} (ID: {cat_id})")
+        links = get_article_links(cat_id, date_str)
+        print(f"Found {len(links)} articles. Scraping up to {args.limit_articles}...")
+        
+        selected_links = links[:args.limit_articles]
+        for url in selected_links:
+            article_data = scrape_article(url)
+            if article_data and 'error' not in article_data:
+                article_data['category'] = cat_name
+                all_articles.append(article_data)
+
+    # Standardized output folders
+    output_path = args.output
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+    
+    with open(output_path, "w", encoding="utf-8") as f:
+        json.dump(all_articles, f, ensure_ascii=False, indent=2)
+    print(f"Exported {len(all_articles)} articles to {output_path}")
+
+    # Save historical snapshot
+    history_path = f"data/news/bisnis/history/{date_str}.json"
+    os.makedirs(os.path.dirname(history_path), exist_ok=True)
+    with open(history_path, "w", encoding="utf-8") as f:
+        json.dump(all_articles, f, ensure_ascii=False, indent=2)
+    print(f"Saved historical snapshot to {history_path}")
 
 if __name__ == "__main__":
-    date = "2025-07-28"
-    categories = get_categories()
-    selected_category_id = categories.get("Ekonomi", "43")  # Default to "43" if not found
-
-    links = get_article_links(selected_category_id, date)
-    print(f"Found {len(links)} unique articles. Scraping...")
-
-    articles = [scrape_article(url) for url in links]
-    save_to_file(articles)
+    main()

@@ -2,6 +2,7 @@ import json
 import logging
 import time
 from urllib.parse import quote, urlparse, parse_qs
+from datetime import datetime
 
 import requests
 from bs4 import BeautifulSoup
@@ -207,35 +208,43 @@ def scrape_detik_article(url):
         logger.exception(f"Unexpected error while scraping article {url}: {e}")
         raise
 
-if __name__ == "__main__":
-    import sys
-    
-    # Allow setting log level via command line
-    log_level = logging.INFO
-    if len(sys.argv) > 1 and sys.argv[1].upper() in ['DEBUG', 'INFO', 'WARNING', 'ERROR']:
-        log_level = getattr(logging, sys.argv[1].upper())
-        logging.getLogger().setLevel(log_level)
-    
-    date = "07/28/2025"
-    start_url = "https://finance.detik.com/indeks"
-    
-    logger.info(f"Starting detik.com scraping for date: {date}")
+def main():
+    import argparse
+    import os
+
+    # Default to current date in MM/DD/YYYY format
+    default_date = datetime.now().strftime("%m/%d/%Y")
+
+    parser = argparse.ArgumentParser(description="Scrape articles from Detik.com")
+    parser.add_argument("--date", default=default_date, help="Date to scrape in MM/DD/YYYY format (default: today)")
+    parser.add_argument("--limit-articles", type=int, default=2, help="Max articles to scrape (default: 2)")
+    parser.add_argument("--output", default="data/news/detik/latest.json", help="Output path for the latest scraping results")
+    parser.add_argument("--log-level", default="INFO", choices=["DEBUG", "INFO", "WARNING", "ERROR"], help="Logging level")
+    args = parser.parse_args()
+
+    # Set log level
+    log_level = getattr(logging, args.log_level.upper())
+    logging.getLogger().setLevel(log_level)
+
+    date_str = args.date
+    logger.info(f"Starting detik.com scraping for date: {date_str}")
     
     all_articles = []
     seen_urls = set()
     
     # Get article links
-    article_links = scrape_articles('https://news.detik.com/indeks', date)
+    article_links = scrape_articles('https://news.detik.com/indeks', date_str)
     logger.info(f"Found {len(article_links)} total article links")
     
     # Scrape individual articles
-    for i, link in enumerate(article_links, 1):
+    selected_links = article_links[:args.limit_articles]
+    for i, link in enumerate(selected_links, 1):
         if link in seen_urls:
-            logger.info(f"Skipping duplicate ({i}/{len(article_links)}): {link}")
+            logger.info(f"Skipping duplicate ({i}/{len(selected_links)}): {link}")
             continue
         
         try:
-            logger.info(f"Processing article ({i}/{len(article_links)}): {link}")
+            logger.info(f"Processing article ({i}/{len(selected_links)}): {link}")
             article_data = scrape_detik_article(link)
             all_articles.append(article_data)
             seen_urls.add(link)
@@ -247,13 +256,25 @@ if __name__ == "__main__":
             logger.error(f"Failed to scrape article {link}: {e}")
             continue
     
-    # Save results
+    # Standardized output folders
+    output_path = args.output
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+    
     try:
-        output_file = "detik_articles.json"
-        with open(output_file, "w", encoding="utf-8") as f:
+        with open(output_path, "w", encoding="utf-8") as f:
             json.dump(all_articles, f, ensure_ascii=False, indent=2)
+        logger.info(f"Scraping complete. Saved {len(all_articles)} articles to {output_path}")
         
-        logger.info(f"Scraping complete. Saved {len(all_articles)} articles to {output_file}")
+        # Save historical snapshot
+        safe_date_str = date_str.replace("/", "-")
+        history_path = f"data/news/detik/history/{safe_date_str}.json"
+        os.makedirs(os.path.dirname(history_path), exist_ok=True)
+        with open(history_path, "w", encoding="utf-8") as f:
+            json.dump(all_articles, f, ensure_ascii=False, indent=2)
+        logger.info(f"Saved historical snapshot to {history_path}")
         
     except Exception as e:
         logger.exception(f"Failed to save articles to JSON: {e}")
+
+if __name__ == "__main__":
+    main()

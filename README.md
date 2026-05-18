@@ -1,106 +1,129 @@
 # Indoscraping
 
-Indoscraping is a collection of web scrapers designed to extract data from various Indonesian websites. This project provides tools for scraping news articles and retail product information. The scrapers are written in both Python and JavaScript, depending on the target site's structure and technology.
+Indoscraping is a modern, unified collection of web scrapers designed to extract news, financial bank rates, and retail product information from prominent Indonesian web portals. The suite is driven by a premium, interactive terminal CLI dashboard built with `rich`, offering structured data organization and headless automation capabilities.
 
-This repository is intended for educational and research purposes. Please be responsible and respect the terms of service of the websites you scrape.
+This repository is intended for educational and research purposes. Please scrape responsibly and respect target websites' terms of service.
 
-## Installation
+---
 
-This project is streamlined using `uv`. It manages both Python and Node.js environments.
+## 🚀 Key Features
+
+*   **Unified Visual CLI Dashboard**: Explore, monitor, and run all scrapers from a single, interactive, colorized terminal screen.
+*   **Standardized Database Directory**: Organized data structures under `data/` separating `latest.json` configurations and chronological dated backups inside `history/YYYY-MM-DD.json`.
+*   **Highly Configurable News Crawlers**: Parameterized Python crawlers supporting dynamic date targeting (`--date`), limit overrides (`--limit-articles`), and custom outputs (`--output`).
+*   **Anti-Blocking Mimicry**: Leverages `curl_cffi` to emulate Chrome TLS handshakes (for API scrapers) and Playwright for headless browser execution.
+
+---
+
+## 🛠️ Installation & Setup
+
+This project uses `uv` for lightning-fast Python dependency management and environment routing.
 
 ### Prerequisites
+- [uv](https://github.com/astral-sh/uv) installed globally.
+- Node.js installed (required for retail API scrapers).
 
-- [uv](https://github.com/astral-sh/uv) installed.
-- Node.js installed (for retail scrapers).
-
-### Setup
-
+### Setup Command
 ```bash
-# Install Python dependencies and setup venv
+# Setup the virtual environment and install Python packages
 uv sync
 
-# Install JavaScript dependencies (if any are added to root package.json)
+# Install Node.js package dependencies
 npm install
 ```
 
-## Usage
+---
 
-You can run all scrapers using `npm run`. This provides a unified interface for both Python and JavaScript scrapers.
+## 💻 Usage
 
-### News Scrapers (Python)
+We provide a premium CLI dashboard named `indoscraping` to manage the scraper suite.
 
+### 1. Interactive Visual Dashboard
+To start the visual terminal dashboard menu to discover and run scrapers interactively:
 ```bash
-# Run a specific scraper
-npm run scrape:detik
-```
+# Via uv
+uv run indoscraping
 
-### Digital Bank Rate Scrapers (Python)
-
-```bash
-# Run the bank rate scraper
-npm run scrape:banks
-# Or using the monthly script directly
-./examples/run_banks.sh
-```
-
-### Retail Scrapers (JavaScript/Node.js)
-
-```bash
-# Run a specific retail scraper
-npm run scrape:alfagift
-npm run scrape:indomaret
-```
-
-### Blibli Scraper (Python/uv)
-
-```bash
-# Run holistic category-based scraping (Discover categories -> Scrape products)
-npm run scrape:blibli-holistic
-
-# Run search-based scraping (defaults to 'xiaomi15t')
-uv run src/indoscraping/scraper/retail/blibli/index.py
-```
-
-### List Available Scrapers
-
-```bash
+# Via npm script
 npm run list:scrapers
 ```
 
-This will scrape product data from Alfagift and save it to `alfagift_products.json`.
+### 2. Status & Volume Metrics
+View the size, last-modified timestamps, and format statuses of all crawled data files across the database directory:
+```bash
+uv run indoscraping status
+```
 
-## Supported Sites
+### 3. Non-Interactive Command-Line Scraper Running
+Execute any scraper headlessly or inside scheduled CRON jobs:
+```bash
+# List all available scraper keys
+uv run indoscraping list
 
-This library supports scraping from the following websites:
+# Run a specific news scraper
+uv run indoscraping run cnbc
+uv run indoscraping run detik --limit-articles 5
+uv run indoscraping run narasi --limit-articles 3 --date 2026-05-18
+
+# Run retail scrapers
+uv run indoscraping run alfagift
+uv run indoscraping run indomaret
+
+# Run digital bank rates
+uv run indoscraping run banks
+```
+
+---
+
+## 📰 News Scrapers Parameters Signature
+All news crawlers accept standard parameter overrides:
+*   `--date`: Crawl date to extract (defaults to today's date or yesterday depending on scraper).
+*   `--limit-categories`: Limits category sectors scanned.
+*   `--limit-articles`: Limits items scraped per category (perfect for rapid smoke testing).
+*   `--output`: Redirects the final output destination.
+
+---
+
+## 🌐 Supported Sites
 
 ### News
-
 - **Bisnis.com**: Financial and business news.
-- **CNBC Indonesia**: Business and financial news.
+- **CNBC Indonesia**: High-performance category crawler.
 - **CNN Indonesia**: National and international news.
-- **Detik.com**: General news portal.
-- **Kompas.com**: National and regional news.
-- **Narasi.tv**: In-depth and investigative journalism.
+- **Detik.com**: General news portal indices.
+- **Kompas.com**: National and regional indices.
+- **Narasi.tv**: Investigative tags scraper (powered by `curl_cffi`).
 
-### Finance / Digital Banks
-
-- **Jenius (BTPN)**
-- **Bank Jago**
-- **SeaBank**
-- **blu by BCA Digital**
-- **LINE Bank**
-- **Bank Neo Commerce**
-- **Krom Bank**
-- **Superbank**
+### Finance & Digital Banks
+- **Jenius (BTPN)**, **Bank Jago**, **SeaBank**, **blu by BCA Digital**, **LINE Bank**, **Bank Neo Commerce**, **Krom Bank**, **Superbank** (powered by Playwright).
 
 ### Retail
+- **Alfagift**: Online store for Alfamart API.
+- **Klik Indomaret**: Online store for Indomaret API.
+- **Blibli**: Category and search-based crawlers.
+- **Tokopedia**: Holistic product category scrapers.
 
-- **Alfagift**: Online store for Alfamart.
-- **Klik Indomaret**: Online store for Indomaret.
-- **Blibli**: Major Indonesian e-commerce platform.
+---
 
-## Disclaimer
+## 📂 Standardized Data Map
+All scraped files systematically save into the following directory tree:
+```
+data/
+├── news/
+│   ├── detik/latest.json & history/YYYY-MM-DD.json
+│   ├── bisnis/latest.json & history/YYYY-MM-DD.json
+│   ├── cnbc/latest.json & history/YYYY-MM-DD.json
+│   ├── cnn/latest.json & history/YYYY-MM-DD.json
+│   ├── kompas/latest.json & history/YYYY-MM-DD.json
+│   └── narasi/latest.json & history/YYYY-MM-DD.json
+├── retail/
+│   ├── alfagift/latest.json & history/YYYY-MM-DD.json
+│   └── indomaret/latest.json & history/YYYY-MM-DD.json
+└── latest.json (Finance banks rates scraper outputs)
+```
 
-The scrapers in this repository are provided for educational and research purposes only. Web scraping may be against the terms of service of some websites. Users of this repository are responsible for ensuring they comply with all applicable laws and terms of service.
+---
 
-The authors and contributors of this project are not responsible for any misuse of the provided tools.
+## ⚖️ Disclaimer
+
+Web scraping may be subject to intellectual property limits and website terms of service. The tools provided in this repository are for educational and academic research purposes only. Users are solely responsible for ensuring compliance with all local laws and terms of service.

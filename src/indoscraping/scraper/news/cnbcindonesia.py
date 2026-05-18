@@ -25,6 +25,7 @@ logger = logging.getLogger(__name__)
 
 BASE_URL = "https://www.cnbcindonesia.com"
 INDEX_URL = f"{BASE_URL}/indeks"
+DEFAULT_TIMEOUT = 30
 
 HEADERS = {
     "User-Agent": ua.random
@@ -35,7 +36,7 @@ def get_categories():
     start_time = time.time()
     
     try:
-        res = requests.get(INDEX_URL, headers=HEADERS)
+        res = requests.get(INDEX_URL, headers=HEADERS, timeout=DEFAULT_TIMEOUT)
         res.raise_for_status()
         logger.debug(f"Categories page response status: {res.status_code}")
         
@@ -93,7 +94,7 @@ def get_articles_for_category(category, date_str):
             logger.debug(f"Fetching page {page} for category {category['name']}: {url}")
             
             try:
-                res = requests.get(url, headers=HEADERS)
+                res = requests.get(url, headers=HEADERS, timeout=DEFAULT_TIMEOUT)
                 res.raise_for_status()
                 
                 soup = BeautifulSoup(res.text, "html.parser")
@@ -137,7 +138,7 @@ def scrape_article(url):
     start_time = time.time()
     
     try:
-        response = requests.get(url, headers=HEADERS)
+        response = requests.get(url, headers=HEADERS, timeout=DEFAULT_TIMEOUT)
         response.raise_for_status()
         logger.debug(f"Article response status: {response.status_code}")
         

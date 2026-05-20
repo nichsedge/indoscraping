@@ -269,6 +269,8 @@ def main() -> None:
                             ocr_text=text,
                         )
                         f_out.write(json.dumps(hit.__dict__, ensure_ascii=False) + "\n")
+                        # flush so partial results survive timeouts/interrupts
+                        f_out.flush()
                         kept += 1
 
                 except Exception as e:

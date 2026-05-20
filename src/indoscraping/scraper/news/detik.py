@@ -8,6 +8,10 @@ import requests
 from bs4 import BeautifulSoup
 from fake_useragent import UserAgent
 
+from indoscraping.core.dq import ensure_list_of_dicts, ensure_required_keys, ensure_unique
+from indoscraping.core.lineage import collect_lineage
+from indoscraping.core.output import write_latest_and_history
+
 # Configure logging with proper formatting and level
 logging.basicConfig(
     level=logging.INFO,
@@ -258,23 +262,43 @@ def main():
     
     # Standardized output folders
     output_path = args.output
-    os.makedirs(os.path.dirname(output_path), exist_ok=True)
-    
+
+    # Basic DQ checks (non-breaking, fast)
     try:
-        with open(output_path, "w", encoding="utf-8") as f:
-            json.dump(all_articles, f, ensure_ascii=False, indent=2)
-        logger.info(f"Scraping complete. Saved {len(all_articles)} articles to {output_path}")
-        
-        # Save historical snapshot
+        ensure_list_of_dicts(all_articles)
+        ensure_required_keys(all_articles, ["url", "title"])  # keep it minimal to avoid false positives
+        ensure_unique(all_articles, "url")
+    except Exception as e:
+        logger.error(f"Data quality checks failed: {e}")
+        raise
+
+    # Lineage sidecar meta (does not alter the primary JSON schema)
+    meta = collect_lineage(scraper_id="detik", repo_root=os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../../..")))
+    meta.update({
+        "date": date_str,
+        "limit_articles": args.limit_articles,
+        "output": output_path,
+        "count": len(all_articles),
+    })
+
+    try:
         safe_date_str = date_str.replace("/", "-")
         history_path = f"data/news/detik/history/{safe_date_str}.json"
-        os.makedirs(os.path.dirname(history_path), exist_ok=True)
-        with open(history_path, "w", encoding="utf-8") as f:
-            json.dump(all_articles, f, ensure_ascii=False, indent=2)
+
+        write_latest_and_history(
+            latest_path=output_path,
+            history_path=history_path,
+            payload=all_articles,
+            meta=meta,
+        )
+
+        logger.info(f"Scraping complete. Saved {len(all_articles)} articles to {output_path}")
         logger.info(f"Saved historical snapshot to {history_path}")
-        
+        logger.info(f"Saved lineage meta to {output_path.replace('.json', '.meta.json')}")
+
     except Exception as e:
         logger.exception(f"Failed to save articles to JSON: {e}")
+        raise
 
 if __name__ == "__main__":
     main()

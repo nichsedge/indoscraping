@@ -4,6 +4,7 @@ import json
 import time
 import random
 import uuid
+import shutil
 from datetime import datetime
 from curl_cffi import requests
 
@@ -41,11 +42,21 @@ def get_headers():
         "Referer": "https://www.klikindomaret.com/"
     }
 
-def fetch_with_retry(url, params, headers, max_retries=5, initial_delay=1.0):
-    """Fetch URL using curl_cffi requests with exponential backoff retry on errors."""
+def fetch_with_retry(url, params, headers, max_retries=10, initial_delay=2.0):
+    """Fetch URL using curl_cffi requests with exponential backoff retry on errors.
+    Specially handles rate limiting (HTTP 429) and network loss with verbose console outputs."""
     for attempt in range(max_retries):
         try:
-            response = requests.get(url, params=params, headers=headers, impersonate="chrome", timeout=15)
+            response = requests.get(url, params=params, headers=headers, impersonate="chrome", timeout=20)
+            
+            # Specifically handle HTTP 429 Rate Limiting
+            if response.status_code == 429:
+                delay = 45.0 + random.uniform(5.0, 15.0)
+                print(f"  [Attempt {attempt + 1}/{max_retries}] WARNING: HTTP 429 (Too Many Requests). Rate limited by server.")
+                print(f"  Respecting server request: Cooling down for {delay:.2f} seconds before retrying...")
+                time.sleep(delay)
+                continue
+                
             response.raise_for_status()
             
             # Check for <!DOCTYPE html
@@ -56,9 +67,20 @@ def fetch_with_retry(url, params, headers, max_retries=5, initial_delay=1.0):
             return response.json()
         except Exception as e:
             if attempt == max_retries - 1:
+                print(f"  [Attempt {attempt + 1}/{max_retries}] Fatal error: All retries exhausted. Error details: {e}")
                 raise e
-            delay = initial_delay * (2 ** attempt) + random.uniform(0.1, 0.5)
-            print(f"  [Attempt {attempt + 1}/{max_retries}] Request failed: {e}. Retrying in {delay:.2f}s...")
+            
+            # Exponential backoff with a cap, plus a random jitter
+            delay = min(initial_delay * (2 ** attempt), 60.0) + random.uniform(0.5, 2.0)
+            
+            # Check for connection errors specifically to give friendly network-loss messages
+            err_msg = str(e)
+            if "connection" in err_msg.lower() or "resolve" in err_msg.lower() or "timeout" in err_msg.lower():
+                print(f"  [Attempt {attempt + 1}/{max_retries}] Network connection lost or timed out: {e}")
+                print(f"  Waiting {delay:.2f} seconds for internet reconnection before retrying...")
+            else:
+                print(f"  [Attempt {attempt + 1}/{max_retries}] Request failed: {e}. Retrying in {delay:.2f}s...")
+                
             time.sleep(delay)
 
 def get_categories():
@@ -179,32 +201,72 @@ def scrape_indomaret(date_str, output_path, limit_categories=None, limit_article
         cat = config["category"]
         sub = config["sub"]
         
-        # Build cache filename
+        # Build cache filename and partial directory
         sub_str = sub if sub else "null"
         cache_file = os.path.join(cache_dir, f"{meta}_{cat}_{sub_str}.json")
+        partial_dir = os.path.join(cache_dir, f"_partial_{meta}_{cat}_{sub_str}")
         
         # Check cache if force is False
         if not force and os.path.exists(cache_file):
-            print(f"[{idx}/{len(categories_to_crawl)}] Category: {meta} -> {cat} -> {sub_str} (Loaded from cache)")
             try:
                 with open(cache_file, 'r', encoding='utf-8') as f:
                     cached_products = json.load(f)
+                print(f"[{idx}/{len(categories_to_crawl)}] Category: {meta} -> {cat} -> {sub_str} - LOADED {len(cached_products)} products from cache (Cache hit)")
                 all_products.extend(cached_products)
                 write_merged_output(cache_dir, output_path, output_format=output_format)
                 continue
             except Exception as e:
-                print(f"  Error loading cache for category segment: {e}. Crawling fresh...")
-                
+                print(f"[{idx}/{len(categories_to_crawl)}] Category: {meta} -> {cat} -> {sub_str} - Error loading cache: {e}. Crawling fresh...")
+
+        # If forcing, clear any partial directory to avoid dirty state
+        if force and os.path.exists(partial_dir):
+            try:
+                shutil.rmtree(partial_dir)
+            except Exception:
+                pass
+
         print(f"[{idx}/{len(categories_to_crawl)}] Scraping category: {meta} -> {cat} -> {sub_str}")
         category_products = []
         page = 0
         
+        # Check for partial progress to resume
+        if not force and os.path.exists(partial_dir):
+            try:
+                page_files = sorted(
+                    [f for f in os.listdir(partial_dir) if f.startswith("page_") and f.endswith(".json")],
+                    key=lambda x: int(x.split("_")[1].split(".")[0])
+                )
+                if page_files:
+                    print(f"  [Checkpoint] Found partial progress directory with {len(page_files)} cached page(s). Restoring...")
+                    for pf in page_files:
+                        pf_path = os.path.join(partial_dir, pf)
+                        with open(pf_path, 'r', encoding='utf-8') as f:
+                            pf_data = json.load(f)
+                            category_products.extend(pf_data)
+                    highest_page = int(page_files[-1].split("_")[1].split(".")[0])
+                    page = highest_page + 1
+                    print(f"  [Checkpoint] Restored {len(category_products)} products. Resuming from page {page}.")
+            except Exception as e:
+                print(f"  [Checkpoint] Failed to restore partial progress: {e}. Starting from page 0.")
+                category_products = []
+                page = 0
+
+        # Ensure partial directory exists for saving progress
+        os.makedirs(partial_dir, exist_ok=True)
+        
         try:
             while True:
+                # Respect the server: add adaptive randomized delay (1.0s to 2.2s)
+                if page > 0 or len(category_products) > 0:
+                    delay = random.uniform(1.0, 2.2)
+                    print(f"  [Sleep] Respecting server: waiting {delay:.2f}s before fetching page {page}...")
+                    time.sleep(delay)
+
                 data = get_products(page, meta, cat, sub)
                 products = data.get("content", [])
                 
                 if not products:
+                    print(f"  Page {page}: No more products returned. Category pagination completed.")
                     break
                     
                 # Add category mapping info to each product
@@ -215,8 +277,13 @@ def scrape_indomaret(date_str, output_path, limit_categories=None, limit_article
                         "subCategories": sub
                     })
                     
+                # Save this page's products to the partial cache directory immediately
+                page_cache_file = os.path.join(partial_dir, f"page_{page}.json")
+                with open(page_cache_file, "w", encoding="utf-8") as f:
+                    json.dump(products, f, ensure_ascii=False, indent=2)
+
                 category_products.extend(products)
-                print(f"  Page {page}: {len(products)} products")
+                print(f"  Page {page}: Scraped {len(products)} products (Total in segment: {len(category_products)})")
                 
                 # Check if we should limit articles per category segment
                 if limit_articles and len(category_products) >= limit_articles:
@@ -225,23 +292,32 @@ def scrape_indomaret(date_str, output_path, limit_categories=None, limit_article
                     break
                     
                 page += 1
-                time.sleep(0.3)
                 
-            # Write to cache
+            # Write to completed cache
             with open(cache_file, "w", encoding="utf-8") as f:
                 json.dump(category_products, f, ensure_ascii=False, indent=2)
-                
+            
+            # Clean up the partial directory now that the category finished successfully
+            try:
+                shutil.rmtree(partial_dir)
+                print(f"  [Cleanup] Cleaned up temporary page caches for {meta} -> {cat} -> {sub_str}")
+            except Exception as e:
+                print(f"  [Cleanup] Warning: Failed to delete partial directory {partial_dir}: {e}")
+
             all_products.extend(category_products)
             
-            # Update live output
+            # Update live output dynamically
             write_merged_output(cache_dir, output_path, output_format=output_format)
             
         except Exception as e:
-            print(f"Error scraping category {meta}/{cat}/{sub_str}: {e}")
-            print(f"Segment failed. Will be retried on next execution.")
+            print(f"  [Segment Error] Failed scraping category {meta}/{cat}/{sub_str} on page {page}: {e}")
+            print(f"  Checkpoint saved! You can resume from page {page} on the next run.")
             
-        time.sleep(0.5)
-        
+        # Small delay between categories
+        category_delay = random.uniform(1.5, 3.0)
+        print(f"  [Sleep] Finished category segment. Waiting {category_delay:.2f}s before next segment...")
+        time.sleep(category_delay)
+
     return all_products
 
 def main():

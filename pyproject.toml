@@ -16,7 +16,12 @@ dependencies = [
     "pydantic>=2.13.3",
     "requests>=2.32.4",
     "rich>=15.0.0",
+    "pytest>=8.0.0",
 ]
+
+[tool.pytest.ini_options]
+addopts = "-q"
+testpaths = ["tests"]
 
 [project.scripts]
 indoscraping = "indoscraping:main"

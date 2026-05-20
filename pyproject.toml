@@ -17,6 +17,8 @@ dependencies = [
     "requests>=2.32.4",
     "rich>=15.0.0",
     "pytest>=8.0.0",
+    "pillow>=12.2.0",
+    "rapidocr-onnxruntime>=1.4.4",
 ]
 
 [tool.pytest.ini_options]

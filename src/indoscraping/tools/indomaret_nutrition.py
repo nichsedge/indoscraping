@@ -31,14 +31,14 @@ NUTRI_PATTERNS = {
     "informasi_gizi": re.compile(r"(?i)informasi\s+(nilai\s+)?gizi|nutrition\s+facts"),
 }
 
-# Loose numeric extractors (OCR can be messy)
-NUM = r"(?P<num>\d{1,4}(?:[\.,]\d{1,2})?)"
-RE_CAL = re.compile(rf"(?i)(energi|energy).{{0,20}}{NUM}.{{0,10}}(kkal|kcal)")
-RE_PROTEIN = re.compile(rf"(?i)protein.{{0,20}}{NUM}.{{0,5}}g")
-RE_FAT = re.compile(rf"(?i)(lemak|fat).{{0,20}}{NUM}.{{0,5}}g")
-RE_CARBS = re.compile(rf"(?i)(karbo|carb).{{0,20}}{NUM}.{{0,5}}g")
-RE_SUGAR = re.compile(rf"(?i)(gula|sugar).{{0,20}}{NUM}.{{0,5}}g")
-RE_SODIUM = re.compile(rf"(?i)(natrium|sodium).{{0,20}}{NUM}.{{0,5}}mg")
+# Loose numeric extractors (OCR can be messy). We intentionally keep these very specific
+# to avoid accidentally capturing unrelated numbers (e.g., %AKG, serving counts, product codes).
+RE_CAL = re.compile(r"(?is)energi\s*total\s*(\d{1,4}(?:[\.,]\d{1,2})?)\s*(kkal|kcal)")
+RE_PROTEIN = re.compile(r"(?is)protein\s*(\d{1,4}(?:[\.,]\d{1,2})?)\s*g")
+RE_FAT = re.compile(r"(?is)lemak\s*total\s*(\d{1,4}(?:[\.,]\d{1,2})?)\s*g")
+RE_CARBS = re.compile(r"(?is)karbohidrat\s*total\s*(\d{1,4}(?:[\.,]\d{1,2})?)\s*g")
+RE_SUGAR = re.compile(r"(?is)gula\s*total\s*(\d{1,4}(?:[\.,]\d{1,2})?)\s*g")
+RE_SODIUM = re.compile(r"(?is)(natrium|sodium)\D{0,20}(\d{1,4}(?:[\.,]\d{1,2})?)\s*mg")
 
 
 @dataclass
@@ -167,27 +167,28 @@ def parse_nutrition_numbers(text: str) -> Dict[str, float | None]:
 
     m = RE_CAL.search(text)
     if m:
-        out["calories_kcal"] = _to_float(m.group("num"))
+        out["calories_kcal"] = _to_float(m.group(1))
 
     m = RE_PROTEIN.search(text)
     if m:
-        out["protein_g"] = _to_float(m.group("num"))
+        out["protein_g"] = _to_float(m.group(1))
 
     m = RE_FAT.search(text)
     if m:
-        out["fat_g"] = _to_float(m.group("num"))
+        out["fat_g"] = _to_float(m.group(1))
 
     m = RE_CARBS.search(text)
     if m:
-        out["carbs_g"] = _to_float(m.group("num"))
+        out["carbs_g"] = _to_float(m.group(1))
 
     m = RE_SUGAR.search(text)
     if m:
-        out["sugar_g"] = _to_float(m.group("num"))
+        out["sugar_g"] = _to_float(m.group(1))
 
     m = RE_SODIUM.search(text)
     if m:
-        out["sodium_mg"] = _to_float(m.group("num"))
+        # sodium regex has 2 capture groups: label + number
+        out["sodium_mg"] = _to_float(m.group(2))
 
     return out
 

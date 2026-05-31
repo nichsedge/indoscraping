@@ -1,7 +1,7 @@
 [project]
 name = "indoscraping"
 version = "0.1.0"
-description = "Add your description here"
+description = "Unified web scraper suite & visual CLI dashboard for Indonesian news, e-commerce retail, and digital banks."
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [

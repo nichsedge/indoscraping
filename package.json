@@ -1,7 +1,7 @@
 {
     "name": "indoscraping",
     "version": "0.1.0",
-    "description": "Indonesian web scrapers collection",
+    "description": "Premium unified web scraper suite & visual CLI dashboard for Indonesian news, e-commerce retail, and digital banks.",
     "main": "index.js",
     "type": "module",
     "scripts": {
@@ -27,7 +27,7 @@
         "python",
         "nodejs"
     ],
-    "author": "",
+    "author": "nichsedge",
     "license": "ISC",
     "dependencies": {
         "playwright": "^1.43.1",

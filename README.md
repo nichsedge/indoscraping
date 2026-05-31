@@ -1,34 +1,49 @@
 # Indoscraping
 
-Indoscraping is a modern, unified collection of web scrapers designed to extract news, financial bank rates, and retail product information from prominent Indonesian web portals. The suite is driven by a premium, interactive terminal CLI dashboard built with `rich`, offering structured data organization and headless automation capabilities.
+<div align="center">
 
-This repository is intended for educational and research purposes. Please scrape responsibly and respect target websites' terms of service.
+[![Python Version](https://img.shields.io/badge/Python-3.12%2B-blue?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
+[![Node.js Version](https://img.shields.io/badge/Node.js-%3E%3D20-green?style=for-the-badge&logo=node.js&logoColor=white)](https://nodejs.org/)
+[![Env Manager](https://img.shields.io/badge/uv-astral-blueviolet?style=for-the-badge&logo=python&logoColor=white)](https://github.com/astral-sh/uv)
+[![License](https://img.shields.io/badge/License-ISC-orange?style=for-the-badge)](https://opensource.org/licenses/ISC)
+[![Code Formatting](https://img.shields.io/badge/Code%20Style-Black-000000?style=for-the-badge)](https://github.com/psf/black)
+
+**A premium, unified collection of web scrapers designed to extract news, financial bank rates, and retail product information from prominent Indonesian web portals. Driven by a visual terminal CLI dashboard.**
+
+</div>
+
+> [!IMPORTANT]
+> This repository is intended strictly for educational and academic research purposes. Please scrape responsibly, adhere to rate limits, and respect each target website's Terms of Service and `robots.txt` policy.
 
 ---
 
 ## 🚀 Key Features
 
-*   **Unified Visual CLI Dashboard**: Explore, monitor, and run all scrapers from a single, interactive, colorized terminal screen.
-*   **Standardized Database Directory**: Organized data structures under `data/` separating `latest.json` configurations and chronological dated backups inside `history/YYYY-MM-DD.json`.
-*   **Highly Configurable News Crawlers**: Parameterized Python crawlers supporting dynamic date targeting (`--date`), limit overrides (`--limit-articles`), and custom outputs (`--output`).
-*   **Anti-Blocking Mimicry**: Leverages `curl_cffi` to emulate Chrome TLS handshakes (for API scrapers) and Playwright for headless browser execution.
+*   **Unified Visual CLI Dashboard**: Discover, monitor, and run all scrapers from a single, interactive, colorized terminal screen built with `rich`.
+*   **Standardized Database Layout**: Systematic and clean data organization under `data/`, automatically splitting `latest.json` for rapid dashboard access and dated snapshots inside `history/YYYY-MM-DD.json` for historical delta tracking.
+*   **Highly Configurable News Crawlers**: Parameterized Python crawlers supporting dynamic target dates (`--date`), category limit overrides (`--limit-categories`), and item quotas (`--limit-articles`).
+*   **Anti-Blocking Mimicry**: Emulates Google Chrome TLS handshakes using `curl_cffi` (for retail and investigatory APIs) and utilizes stealthy system browser launches via Playwright to bypass common bot defenses.
 
 ---
 
 ## 🛠️ Installation & Setup
 
-This project uses `uv` for lightning-fast Python dependency management and environment routing.
+This project leverages [uv](https://github.com/astral-sh/uv) for lightning-fast Python dependency management and environment routing.
 
 ### Prerequisites
-- [uv](https://github.com/astral-sh/uv) installed globally.
-- Node.js installed (required for retail API scrapers).
 
-### Setup Command
+> [!NOTE]
+> Ensure you have the following installed on your host system:
+> - **[uv](https://github.com/astral-sh/uv)** installed globally.
+> - **Node.js** installed (required to execute retail scrapers).
+
+### Setup Commands
+
 ```bash
-# Setup the virtual environment and install Python packages
+# Setup the virtual environment and restore all Python dependencies
 uv sync
 
-# Install Node.js package dependencies
+# Install Node.js npm package dependencies
 npm install
 ```
 
@@ -36,76 +51,82 @@ npm install
 
 ## 💻 Usage
 
-We provide a premium CLI dashboard named `indoscraping` to manage the scraper suite.
+We provide a visual CLI dashboard named `indoscraping` to manage the scraper suite interactively or run scrapers headlessly.
 
 ### 1. Interactive Visual Dashboard
-To start the visual terminal dashboard menu to discover and run scrapers interactively:
+
+To launch the premium interactive terminal menu to explore and execute scrapers:
 ```bash
-# Via uv
+# Launch via uv
 uv run indoscraping
 
-# Via npm script
+# Or run the npm script shortcut
 npm run list:scrapers
 ```
 
 ### 2. Status & Volume Metrics
-View the size, last-modified timestamps, and format statuses of all crawled data files across the database directory:
+
+Check crawled data sizes, file formats, and last-modified dates across your local datasets:
 ```bash
 uv run indoscraping status
 ```
 
-### 3. Non-Interactive Command-Line Scraper Running
-Execute any scraper headlessly or inside scheduled CRON jobs:
+### 3. Headless CLI Execution (Automation & CRONs)
+
+Execute individual scrapers directly without the interactive dashboard (perfect for headless environments and scheduled CRON scripts):
 ```bash
 # List all available scraper keys
 uv run indoscraping list
 
-# Run a specific news scraper
+# Run a news scraper with options
 uv run indoscraping run cnbc
 uv run indoscraping run detik --limit-articles 5
 uv run indoscraping run narasi --limit-articles 3 --date 2026-05-18
 
-# Run retail scrapers
+# Run retail API scrapers
 uv run indoscraping run alfagift
 uv run indoscraping run indomaret
 
-# Run digital bank rates
+# Run digital bank rates crawler
 uv run indoscraping run banks
 ```
 
 ---
 
 ## 📰 News Scrapers Parameters Signature
-All news crawlers accept standard parameter overrides:
-*   `--date`: Crawl date to extract (defaults to today's date or yesterday depending on scraper).
-*   `--limit-categories`: Limits category sectors scanned.
-*   `--limit-articles`: Limits items scraped per category (perfect for rapid smoke testing).
-*   `--output`: Redirects the final output destination.
+
+All news crawlers accept a standard CLI interface for runtime overrides:
+- `--date`: The target crawl date to extract. Automatically defaults to today's date.
+- `--limit-categories`: Limits the number of category sectors scanned (default: 1).
+- `--limit-articles`: Limits items scraped per category (perfect for rapid smoke testing).
+- `--output`: Redirects the output file path.
 
 ---
 
 ## 🌐 Supported Sites
 
-### News
-- **Bisnis.com**: Financial and business news.
-- **CNBC Indonesia**: High-performance category crawler.
-- **CNN Indonesia**: National and international news.
-- **Detik.com**: General news portal indices.
-- **Kompas.com**: National and regional indices.
-- **Narasi.tv**: Investigative tags scraper (powered by `curl_cffi`).
+### News Portals
+- **Bisnis.com**: Business and financial market indices.
+- **CNBC Indonesia**: High-performance multi-threaded crawler.
+- **CNN Indonesia**: General national and international news.
+- **Detik.com**: Fast portal index crawler.
+- **Kompas.com**: National and regional general news.
+- **Narasi.tv**: Investigative news scraper powered by `curl_cffi` to bypass TLS detection.
 
 ### Finance & Digital Banks
-- **Jenius (BTPN)**, **Bank Jago**, **SeaBank**, **blu by BCA Digital**, **LINE Bank**, **Bank Neo Commerce**, **Krom Bank**, **Superbank** (powered by Playwright).
+- **Playwright Crawlers**: Fetches interest rate options from:
+  - *Jenius (BTPN)*, *Bank Jago*, *SeaBank*, *blu by BCA Digital*, *LINE Bank*, *Bank Neo Commerce*, *Krom Bank*, *Superbank*.
 
-### Retail
-- **Alfagift**: Online store for Alfamart API.
-- **Klik Indomaret**: Online store for Indomaret API.
-- **Blibli**: Category and search-based crawlers.
+### Retail & E-Commerce
+- **Alfagift**: API scraper mimicking corporate app handshakes with resilience checkpointing.
+- **Klik Indomaret**: Fast inventory API scraper.
+- **Blibli**: Category discovery and keyword search-based Playwright scrapers.
 - **Tokopedia**: Holistic product category scrapers.
 
 ---
 
 ## 📂 Standardized Data Map
+
 All scraped files systematically save into the following directory tree:
 ```
 data/
@@ -126,4 +147,5 @@ data/
 
 ## ⚖️ Disclaimer
 
-Web scraping may be subject to intellectual property limits and website terms of service. The tools provided in this repository are for educational and academic research purposes only. Users are solely responsible for ensuring compliance with all local laws and terms of service.
+> [!WARNING]
+> Web scraping may be subject to intellectual property rights, data protection regulations, and targeted terms of service. The tools and scripts provided in this repository are designed strictly for educational and academic research. Users assume all responsibility for compliance with all local laws and terms of service.

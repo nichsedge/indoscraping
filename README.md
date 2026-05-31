@@ -6,7 +6,7 @@
 [![Node.js Version](https://img.shields.io/badge/Node.js-%3E%3D20-green?style=for-the-badge&logo=node.js&logoColor=white)](https://nodejs.org/)
 [![Env Manager](https://img.shields.io/badge/uv-astral-blueviolet?style=for-the-badge&logo=python&logoColor=white)](https://github.com/astral-sh/uv)
 [![License](https://img.shields.io/badge/License-ISC-orange?style=for-the-badge)](https://opensource.org/licenses/ISC)
-[![Code Formatting](https://img.shields.io/badge/Code%20Style-Black-000000?style=for-the-badge)](https://github.com/psf/black)
+[![Code Style](https://img.shields.io/badge/code%20style-ruff-000000.svg?style=for-the-badge&logo=ruff)](https://github.com/astral-sh/ruff)
 
 **A premium, unified collection of web scrapers designed to extract news, financial bank rates, and retail product information from prominent Indonesian web portals. Driven by a visual terminal CLI dashboard.**
 

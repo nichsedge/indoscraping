@@ -6,16 +6,13 @@ Welcome to the modernized **Indoscraping** developer manual. This document guide
 
 ## 1. Unified Scraper CLI Dashboard (`indoscraping`)
 
-We have introduced a powerful, visual command-line interface dashboard built with `rich` that unifies all Node.js and Python scrapers.
+We have introduced a powerful, visual command-line interface dashboard built with `rich` that unifies all Python scrapers.
 
 ### Running the Dashboard
 To launch the interactive visual terminal menu:
 ```bash
 # Via uv
 uv run indoscraping
-
-# Via npm script
-npm run list:scrapers
 ```
 
 ### Direct CLI Commands (Automation / CRONs)
@@ -49,7 +46,6 @@ uv run indoscraping run-all --limit-articles 1 --limit-categories 1
 - **Python Env Manager (`uv`)**: We use `uv` for lightning-fast environment and package management.
   - Run `uv sync` to restore environments.
   - Run `uv add <pkg>` to install new packages (e.g. `curl-cffi`, `rich`, `BeautifulSoup4`).
-- **Node.js**: Required for retail scrapers. Execute `npm install` in the workspace root if needed.
 - **Playwright Bypass**: For bank rates and Blibli search scrapers, ensure the environment variable `PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1` is passed to rely on system-installed Chromium.
 
 ---

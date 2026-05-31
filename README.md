@@ -3,7 +3,6 @@
 <div align="center">
 
 [![Python Version](https://img.shields.io/badge/Python-3.12%2B-blue?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
-[![Node.js Version](https://img.shields.io/badge/Node.js-%3E%3D20-green?style=for-the-badge&logo=node.js&logoColor=white)](https://nodejs.org/)
 [![Env Manager](https://img.shields.io/badge/uv-astral-blueviolet?style=for-the-badge&logo=python&logoColor=white)](https://github.com/astral-sh/uv)
 [![License](https://img.shields.io/badge/License-ISC-orange?style=for-the-badge)](https://opensource.org/licenses/ISC)
 [![Code Style](https://img.shields.io/badge/code%20style-ruff-000000.svg?style=for-the-badge&logo=ruff)](https://github.com/astral-sh/ruff)
@@ -33,18 +32,13 @@ This project leverages [uv](https://github.com/astral-sh/uv) for lightning-fast 
 ### Prerequisites
 
 > [!NOTE]
-> Ensure you have the following installed on your host system:
-> - **[uv](https://github.com/astral-sh/uv)** installed globally.
-> - **Node.js** installed (required to execute retail scrapers).
+> Ensure you have **[uv](https://github.com/astral-sh/uv)** installed globally on your host system.
 
 ### Setup Commands
 
 ```bash
 # Setup the virtual environment and restore all Python dependencies
 uv sync
-
-# Install Node.js npm package dependencies
-npm install
 ```
 
 ---
@@ -59,9 +53,6 @@ To launch the premium interactive terminal menu to explore and execute scrapers:
 ```bash
 # Launch via uv
 uv run indoscraping
-
-# Or run the npm script shortcut
-npm run list:scrapers
 ```
 
 ### 2. Status & Volume Metrics

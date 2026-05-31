@@ -412,7 +412,7 @@ def interactive_dashboard() -> None:
                 "  - [magenta]News[/magenta]: Detik, Bisnis.com, CNBC, CNN, Kompas, Narasi\n"
                 "  - [magenta]Retail[/magenta]: Alfagift, Klik Indomaret, Blibli, Tokopedia\n"
                 "  - [magenta]Finance[/magenta]: Digital bank rates (Jago, SeaBank, Jenius, etc.)\n\n"
-                "Dependencies are managed efficiently using [green]uv[/green] and [green]Node.js[/green].\n"
+                "Dependencies are managed efficiently using [green]uv[/green].\n"
                 "Playwright crawls automatically bypass runtime browser downloads and use local system-installed binaries."
             )
             console.print(Panel(help_text, border_style="cyan", title="Help & Information"))

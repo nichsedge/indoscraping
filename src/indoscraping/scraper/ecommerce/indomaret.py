@@ -155,7 +155,7 @@ def scrape_indomaret(date_str, output_path, limit_categories=None, limit_article
     print("Starting KlikIndomaret product scraping...")
     
     # Establish cache directory based on date
-    cache_dir = f"data/retail/indomaret/.cache/{date_str}"
+    cache_dir = f"data/ecommerce/indomaret/.cache/{date_str}"
     os.makedirs(cache_dir, exist_ok=True)
     
     try:
@@ -327,7 +327,7 @@ def main():
     parser.add_argument("--date", default=default_date, help="Date to scrape in YYYY-MM-DD format (default: today)")
     parser.add_argument("--limit-categories", type=int, default=None, help="Max categories to scrape (default: all)")
     parser.add_argument("--limit-articles", type=int, default=None, help="Max products to scrape per category (default: all)")
-    parser.add_argument("--output", default="data/retail/indomaret/latest.json", help="Output path for the latest scraping results")
+    parser.add_argument("--output", default="data/ecommerce/indomaret/latest.json", help="Output path for the latest scraping results")
     parser.add_argument("--force", action="store_true", help="Force scrape all categories, bypassing cache")
     parser.add_argument("--format", choices=["json", "jsonl", "csv"], default="json", help="Output format (default: json)")
     args = parser.parse_args()
@@ -351,7 +351,7 @@ def main():
         # Save historical snapshot of the merged final output
         date_str = args.date
         history_ext = args.format
-        history_path = f"data/retail/indomaret/history/{date_str}.{history_ext}"
+        history_path = f"data/ecommerce/indomaret/history/{date_str}.{history_ext}"
         os.makedirs(os.path.dirname(history_path), exist_ok=True)
         
         # Read compiled live output to save the full final snapshot

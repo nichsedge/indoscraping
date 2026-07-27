@@ -68,45 +68,45 @@ SCRAPERS: Dict[str, Dict[str, Any]] = {
         "desc": "Queries the Narasi API to fetch spotlight articles and tags using curl-cffi.",
         "output_path": "data/news/narasi/latest.json"
     },
-    # Retail Category
+    # E-Commerce Category
     "alfagift": {
         "name": "Alfagift Scraper",
-        "category": "Retail",
+        "category": "E-Commerce",
         "lang": "Python",
-        "cmd": ["python", "src/indoscraping/scraper/retail/alfagift.py"],
+        "cmd": ["python", "src/indoscraping/scraper/ecommerce/alfagift.py"],
         "desc": "Scrapes categories and products from the Alfamart Alfagift app.",
-        "output_path": "data/retail/alfagift/latest.json"
+        "output_path": "data/ecommerce/alfagift/latest.json"
     },
     "indomaret": {
         "name": "Klik Indomaret Scraper",
-        "category": "Retail",
+        "category": "E-Commerce",
         "lang": "Python",
-        "cmd": ["python", "src/indoscraping/scraper/retail/indomaret.py"],
+        "cmd": ["python", "src/indoscraping/scraper/ecommerce/indomaret.py"],
         "desc": "Scrapes products and catalog details from KlikIndomaret.",
-        "output_path": "data/retail/indomaret/latest.json"
+        "output_path": "data/ecommerce/indomaret/latest.json"
     },
     "blibli-search": {
         "name": "Blibli Search Scraper",
-        "category": "Retail",
+        "category": "E-Commerce",
         "lang": "Python (Playwright)",
-        "cmd": ["python", "src/indoscraping/scraper/retail/blibli_search.py"],
+        "cmd": ["python", "src/indoscraping/scraper/ecommerce/blibli_search.py"],
         "desc": "Scrapes search results from Blibli using Playwright.",
-        "output_path": "data/retail/blibli/latest.json",
+        "output_path": "data/ecommerce/blibli/latest.json",
         "env": {"PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1"}
     },
     "blibli-holistic": {
         "name": "Blibli Holistic Scraper",
-        "category": "Retail",
+        "category": "E-Commerce",
         "lang": "Python",
-        "cmd": ["python", "src/indoscraping/scraper/retail/blibli_holistic.py"],
+        "cmd": ["python", "src/indoscraping/scraper/ecommerce/blibli_holistic.py"],
         "desc": "Performs holistic category discovery and product scraping on Blibli.",
         "output_path": "data/blibli/blibli_c2_priority_list.csv"
     },
     "tokped": {
         "name": "Tokopedia Holistic Scraper",
-        "category": "Retail",
+        "category": "E-Commerce",
         "lang": "Python (Selenium)",
-        "cmd": ["python", "src/indoscraping/scraper/retail/tokopedia.py"],
+        "cmd": ["python", "src/indoscraping/scraper/ecommerce/tokopedia.py"],
         "desc": "Scrapes Tokopedia category tree and product details using Undetected ChromeDriver.",
         "output_path": "data/tokopedia/tokopedia_holistic_data.csv"
     },
@@ -332,7 +332,7 @@ def interactive_dashboard() -> None:
                 console.print(table)
                 console.print()
                 console.print("[dim]Enter the Scraper ID to start running, or 'b' to go back.[/dim]")
-                console.print("[dim]Or run multiple: 'all', 'all:news', 'all:retail', 'all:finance'[/dim]")
+                console.print("[dim]Or run multiple: 'all', 'all:news', 'all:ecommerce', 'all:finance'[/dim]")
                 scraper_choice = console.input("[bold yellow]Run Scraper ID: [/bold yellow]").strip()
 
                 if scraper_choice.lower() == "b":
@@ -410,7 +410,7 @@ def interactive_dashboard() -> None:
                 "[bold cyan]Indoscraping Scraper Suite[/bold cyan]\n\n"
                 "This collection aggregates various crawlers focused on Indonesian data:\n"
                 "  - [magenta]News[/magenta]: Detik, Bisnis.com, CNBC, CNN, Kompas, Narasi\n"
-                "  - [magenta]Retail[/magenta]: Alfagift, Klik Indomaret, Blibli, Tokopedia\n"
+                "  - [magenta]E-Commerce[/magenta]: Alfagift, Klik Indomaret, Blibli, Tokopedia\n"
                 "  - [magenta]Finance[/magenta]: Digital bank rates (Jago, SeaBank, Jenius, etc.)\n\n"
                 "Dependencies are managed efficiently using [green]uv[/green].\n"
                 "Playwright crawls automatically bypass runtime browser downloads and use local system-installed binaries."
@@ -440,9 +440,9 @@ def main() -> None:
 
     # Run-all command
     run_all_parser = subparsers.add_parser("run-all", help="Run all scrapers sequentially")
-    run_all_parser.add_argument("--category", choices=["news", "retail", "finance"], type=str.lower, help="Filter scrapers by category")
+    run_all_parser.add_argument("--category", choices=["news", "ecommerce", "finance"], type=str.lower, help="Filter scrapers by category")
     run_all_parser.add_argument("--limit-categories", type=int, help="Override --limit-categories argument for news scrapers")
-    run_all_parser.add_argument("--limit-articles", type=int, help="Override --limit-articles argument for news/retail scrapers")
+    run_all_parser.add_argument("--limit-articles", type=int, help="Override --limit-articles argument for news/ecommerce scrapers")
 
     # Status command
     subparsers.add_parser("status", help="Show scraped output files and data metrics")

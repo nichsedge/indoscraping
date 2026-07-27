@@ -202,9 +202,9 @@ def load_products(path: Path) -> List[Dict[str, Any]]:
 
 def main() -> None:
     ap = argparse.ArgumentParser(description="Extract nutrition facts candidates from Indomaret dataset via OCR of product images.")
-    ap.add_argument("--input", default="data/retail/indomaret/latest.dedup.json", help="Input product JSON (default: latest.dedup.json)")
-    ap.add_argument("--out", default="data/retail/indomaret/nutrition/nutrition_hits.jsonl", help="Output JSONL path")
-    ap.add_argument("--download-dir", default="data/retail/indomaret/nutrition/images", help="Where to store downloaded images")
+    ap.add_argument("--input", default="data/ecommerce/indomaret/latest.dedup.json", help="Input product JSON (default: latest.dedup.json)")
+    ap.add_argument("--out", default="data/ecommerce/indomaret/nutrition/nutrition_hits.jsonl", help="Output JSONL path")
+    ap.add_argument("--download-dir", default="data/ecommerce/indomaret/nutrition/images", help="Where to store downloaded images")
     ap.add_argument("--max-products", type=int, default=300, help="Max products to scan (OCR is expensive). Use 0 for all.")
     ap.add_argument("--max-images-per-product", type=int, default=4, help="Limit images tried per product.")
     ap.add_argument("--min-keywords", type=int, default=2, help="How many nutrition keywords must match to keep a hit.")

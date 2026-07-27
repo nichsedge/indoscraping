@@ -1,7 +1,7 @@
 [project]
 name = "indoscraping"
 version = "0.1.0"
-description = "Unified web scraper suite & visual CLI dashboard for Indonesian news, e-commerce retail, and digital banks."
+description = "Unified web scraper suite & visual CLI dashboard for Indonesian news, e-commerce (Tokopedia, Blibli, Alfagift, Klik Indomaret), and digital banks."
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
@@ -19,6 +19,7 @@ dependencies = [
     "pytest>=8.0.0",
     "pillow>=12.2.0",
     "rapidocr-onnxruntime>=1.4.4",
+    "pyarrow>=25.0.0",
 ]
 
 [tool.pytest.ini_options]

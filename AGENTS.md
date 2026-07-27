@@ -63,7 +63,7 @@ data/
 │   ├── cnn/latest.json & history/YYYY-MM-DD.json
 │   ├── kompas/latest.json & history/YYYY-MM-DD.json
 │   └── narasi/latest.json & history/YYYY-MM-DD.json
-├── retail/
+├── ecommerce/
 │   ├── alfagift/latest.json & history/YYYY-MM-DD.json
 │   └── indomaret/latest.json & history/YYYY-MM-DD.json
 └── latest.json (Finance banks scraper outputs)
@@ -94,9 +94,29 @@ All news crawlers accept standard argparse parameter structures for dynamic over
 - **Finance Scrapers**: [src/indoscraping/scraper/finance/](file:///home/al/Projects/indoscraping/src/indoscraping/scraper/finance/)
   - `rates.py` — Executes interest rate crawls via Playwright (formerly `index.py`).
   - Uses `BaseScraper` class and custom models (`models.py`).
-- **Retail Scrapers**: [src/indoscraping/scraper/retail/](file:///home/al/Projects/indoscraping/src/indoscraping/scraper/retail/)
+- **E-Commerce Scrapers**: [src/indoscraping/scraper/ecommerce/](file:///home/al/Projects/indoscraping/src/indoscraping/scraper/ecommerce/)
   - `alfagift.py` — Impersonated API scraper via `curl_cffi` with resilience checkpointing.
   - `indomaret.py` — Impersonated API scraper via `curl_cffi` with resilience checkpointing.
   - `blibli_search.py` — Playwright search results crawler with retry logic.
   - `blibli_holistic.py` — Python category discovery and product scraper.
   - `tokopedia.py` — Selenium/Undetected Chromedriver category crawler.
+
+---
+
+## 6. Repository Topology & Downstream Mirrors
+
+This repository is structured as a **monorepo**. While we develop, test, and aggregate data centrally in this repository, we automatically mirror individual scraper categories to standalone, read-only repositories for public discoverability:
+- [indoscraping-news](https://github.com/nichsedge/indoscraping-news)
+- [indoscraping-ecommerce](https://github.com/nichsedge/indoscraping-ecommerce)
+- [indoscraping-finance](https://github.com/nichsedge/indoscraping-finance)
+
+### Mirror Workflow
+Whenever changes are pushed to the `main` branch, a GitHub Actions workflow (`.github/workflows/mirror.yml`) runs the custom script `scripts/mirror.py`. This script:
+1. Recreates standalone structures under `src/indoscraping/scraper/<category>`.
+2. Packages the shared code in `src/indoscraping/core` into the mirror.
+3. Automatically generates minimal, target-specific `pyproject.toml` and `README.md` configurations.
+4. Force-pushes the resulting commits to the downstream target repositories.
+
+### Developer/Agent Contribution Rule
+> [!IMPORTANT]
+> **Always make contributions, bug fixes, and feature requests directly in this central `indoscraping` monorepo.** Do not submit PRs directly to the read-only mirrors, as they will be overwritten on the next automated mirror sync.

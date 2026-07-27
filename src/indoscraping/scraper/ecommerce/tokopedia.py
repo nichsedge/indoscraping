@@ -244,9 +244,9 @@ def main():
     # Find the repo root (assuming it's 5 levels up from this script or just use 'data/' if run from root)
     # To be safe, we'll try to find 'data' relative to the script location
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    # The script is at src/indoscraping/scraper/retail/tokopedia/tokped_all_products.py
+    # The script is at src/indoscraping/scraper/ecommerce/tokopedia.py
     # We want to go up to the repo root
-    repo_root = os.path.abspath(os.path.join(script_dir, "../../../../../"))
+    repo_root = os.path.abspath(os.path.join(script_dir, "../../../../"))
     output_dir = os.path.join(repo_root, 'data/tokopedia')
     
     output_file = f'{output_dir}/tokopedia_holistic_data.{output_format}'

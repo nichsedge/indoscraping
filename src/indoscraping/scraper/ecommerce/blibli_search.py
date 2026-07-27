@@ -136,7 +136,7 @@ def main():
     parser = argparse.ArgumentParser(description="Blibli Search Scraper using Playwright")
     parser.add_argument("--query", default="xiaomi note 15 pro", help="Search query (default: 'xiaomi note 15 pro')")
     parser.add_argument("--date", default=default_date, help="Date to scrape in YYYY-MM-DD format (default: today)")
-    parser.add_argument("--output", default="data/retail/blibli/latest.json", help="Output path for the latest scraping results")
+    parser.add_argument("--output", default="data/ecommerce/blibli/latest.json", help="Output path for the latest scraping results")
     parser.add_argument("--format", choices=["json", "jsonl", "csv"], default="json", help="Output format (default: json)")
     args = parser.parse_args()
     
@@ -156,7 +156,7 @@ def main():
         # Save historical snapshot of the merged final output
         date_str = args.date
         history_ext = args.format
-        history_path = f"data/retail/blibli/history/{date_str}.{history_ext}"
+        history_path = f"data/ecommerce/blibli/history/{date_str}.{history_ext}"
         os.makedirs(os.path.dirname(history_path), exist_ok=True)
         
         # Read/Copy content directly to historical file

@@ -568,11 +568,15 @@ dependencies = [
     { name = "pyarrow" },
     { name = "pydantic" },
     { name = "pytest" },
-    { name = "rapidocr-onnxruntime" },
     { name = "requests" },
     { name = "rich" },
     { name = "setuptools" },
     { name = "tokopedia-scraper" },
+]
+
+[package.optional-dependencies]
+ocr = [
+    { name = "rapidocr-onnxruntime" },
 ]
 
 [package.metadata]
@@ -593,12 +597,13 @@ requires-dist = [
     { name = "pyarrow", specifier = ">=25.0.0" },
     { name = "pydantic", specifier = ">=2.13.3" },
     { name = "pytest", specifier = ">=8.0.0" },
-    { name = "rapidocr-onnxruntime", specifier = ">=1.4.4" },
+    { name = "rapidocr-onnxruntime", marker = "extra == 'ocr'", specifier = ">=1.4.4" },
     { name = "requests", specifier = ">=2.32.4" },
     { name = "rich", specifier = ">=15.0.0" },
     { name = "setuptools" },
     { name = "tokopedia-scraper", editable = "packages/tokopedia-scraper" },
 ]
+provides-extras = ["ocr"]
 
 [[package]]
 name = "indoscraping-core"

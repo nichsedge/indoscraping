@@ -18,7 +18,7 @@ from indoscraping_core.schema_drift import (
 from indoscraping_core.http import fetch_stealth_json, get_proxy_config
 from indoscraping_core.logging import setup_enterprise_logging, StructuredJsonFormatter
 from indoscraping_core.lineage import collect_lineage
-from indoscraping_core.output import write_json, write_latest_and_history
+from indoscraping_core.output import write_json, write_latest_and_history, meta_sidecar_path
 
 __all__ = [
     "DataQualityError",
@@ -41,4 +41,5 @@ __all__ = [
     "collect_lineage",
     "write_json",
     "write_latest_and_history",
+    "meta_sidecar_path",
 ]

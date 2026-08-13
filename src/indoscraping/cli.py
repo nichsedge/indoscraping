@@ -73,7 +73,7 @@ SCRAPERS: Dict[str, Dict[str, Any]] = {
         "name": "Alfagift Scraper",
         "category": "E-Commerce",
         "lang": "Python",
-        "cmd": ["python", "src/indoscraping/scraper/ecommerce/alfagift.py"],
+        "cmd": ["alfagift-scraper"],
         "desc": "Scrapes categories and products from the Alfamart Alfagift app.",
         "output_path": "data/ecommerce/alfagift/latest.json"
     },
@@ -81,7 +81,7 @@ SCRAPERS: Dict[str, Dict[str, Any]] = {
         "name": "Klik Indomaret Scraper",
         "category": "E-Commerce",
         "lang": "Python",
-        "cmd": ["python", "src/indoscraping/scraper/ecommerce/indomaret.py"],
+        "cmd": ["indomaret-scraper"],
         "desc": "Scrapes products and catalog details from KlikIndomaret.",
         "output_path": "data/ecommerce/indomaret/latest.json"
     },
@@ -89,26 +89,18 @@ SCRAPERS: Dict[str, Dict[str, Any]] = {
         "name": "Blibli Search Scraper",
         "category": "E-Commerce",
         "lang": "Python (Playwright)",
-        "cmd": ["python", "src/indoscraping/scraper/ecommerce/blibli_search.py"],
+        "cmd": ["blibli-scraper"],
         "desc": "Scrapes search results from Blibli using Playwright.",
         "output_path": "data/ecommerce/blibli/latest.json",
         "env": {"PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1"}
-    },
-    "blibli-holistic": {
-        "name": "Blibli Holistic Scraper",
-        "category": "E-Commerce",
-        "lang": "Python",
-        "cmd": ["python", "src/indoscraping/scraper/ecommerce/blibli_holistic.py"],
-        "desc": "Performs holistic category discovery and product scraping on Blibli.",
-        "output_path": "data/blibli/blibli_c2_priority_list.csv"
     },
     "tokped": {
         "name": "Tokopedia Holistic Scraper",
         "category": "E-Commerce",
         "lang": "Python (Selenium)",
-        "cmd": ["python", "src/indoscraping/scraper/ecommerce/tokopedia.py"],
+        "cmd": ["tokopedia-scraper"],
         "desc": "Scrapes Tokopedia category tree and product details using Undetected ChromeDriver.",
-        "output_path": "data/tokopedia/tokopedia_holistic_data.csv"
+        "output_path": "data/ecommerce/tokopedia/latest.json"
     },
     # Finance Category
     "banks": {

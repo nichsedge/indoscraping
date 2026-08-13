@@ -1,4 +1,4 @@
-from indoscraping.core.output import meta_sidecar_path
+from indoscraping_core.output import meta_sidecar_path
 
 
 def test_meta_sidecar_path_json():

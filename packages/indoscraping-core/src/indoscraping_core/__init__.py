@@ -18,7 +18,7 @@ from .schema_drift import (
 from .http import fetch_stealth_json, get_proxy_config
 from .logging import setup_enterprise_logging, StructuredJsonFormatter
 from .lineage import collect_lineage
-from .output import write_json, write_latest_and_history
+from .output import write_json, write_latest_and_history, meta_sidecar_path
 
 __all__ = [
     "DataQualityError",
@@ -41,4 +41,5 @@ __all__ = [
     "collect_lineage",
     "write_json",
     "write_latest_and_history",
+    "meta_sidecar_path",
 ]

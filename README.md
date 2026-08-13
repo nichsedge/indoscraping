@@ -37,8 +37,11 @@ This project leverages [uv](https://github.com/astral-sh/uv) for lightning-fast 
 ### Setup Commands
 
 ```bash
-# Setup the virtual environment and restore all Python dependencies
+# Setup the virtual environment and restore all core Python dependencies
 uv sync
+
+# Optional: Install OCR extra for Indomaret nutrition label vision processing
+uv sync --extra ocr
 ```
 
 ---

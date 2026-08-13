@@ -43,8 +43,12 @@ dependencies = [
     "rich>=15.0.0",
     "pytest>=8.0.0",
     "pillow>=12.2.0",
-    "rapidocr-onnxruntime>=1.4.4",
     "pyarrow>=25.0.0",
+]
+
+[project.optional-dependencies]
+ocr = [
+    "rapidocr-onnxruntime>=1.4.4",
 ]
 
 [tool.pytest.ini_options]

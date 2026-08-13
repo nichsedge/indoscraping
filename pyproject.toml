@@ -4,7 +4,32 @@ version = "0.1.0"
 description = "Unified web scraper suite & visual CLI dashboard for Indonesian news, e-commerce (Tokopedia, Blibli, Alfagift, Klik Indomaret), and digital banks."
 readme = "README.md"
 requires-python = ">=3.12"
+keywords = [
+    "indoscraping",
+    "blibli",
+    "blibli-scraper",
+    "tokopedia",
+    "tokopedia-scraper",
+    "idx-bei",
+    "detik",
+    "bisnis",
+    "cnbc",
+    "cnn",
+    "kompas",
+    "narasi",
+    "alfagift",
+    "indomaret",
+    "web-scraping",
+    "indonesia",
+    "indonesia-scraper",
+]
 dependencies = [
+    "indoscraping-core",
+    "blibli-scraper",
+    "tokopedia-scraper",
+    "alfagift-scraper",
+    "indomaret-scraper",
+    "setuptools",
     "beautifulsoup4>=4.13.4",
     "curl-cffi>=0.15.0",
     "fake-useragent>=2.2.0",
@@ -32,6 +57,19 @@ indoscraping = "indoscraping:main"
 [tool.uv]
 managed = true
 
+[tool.uv.workspace]
+members = [
+    "packages/*",
+]
+
+[tool.uv.sources]
+indoscraping-core = { workspace = true }
+blibli-scraper = { workspace = true }
+tokopedia-scraper = { workspace = true }
+alfagift-scraper = { workspace = true }
+indomaret-scraper = { workspace = true }
+
 [build-system]
 requires = ["uv_build>=0.8.2,<0.9.0"]
 build-backend = "uv_build"
+

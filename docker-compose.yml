@@ -1,0 +1,34 @@
+version: "3.8"
+
+services:
+  indoscraping-cli:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: indoscraping:latest
+    environment:
+      - HTTP_PROXY=${HTTP_PROXY:-}
+      - HTTPS_PROXY=${HTTPS_PROXY:-}
+      - LOG_LEVEL=INFO
+      - JSON_LOGGING=true
+    volumes:
+      - ./data:/app/data
+    command: ["run", "detik"]
+
+  blibli-scraper:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: indoscraping:latest
+    volumes:
+      - ./data:/app/data
+    command: ["blibli-scraper", "--query", "susu", "--format", "json"]
+
+  tokopedia-scraper:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: indoscraping:latest
+    volumes:
+      - ./data:/app/data
+    command: ["tokopedia-scraper", "--format", "json"]

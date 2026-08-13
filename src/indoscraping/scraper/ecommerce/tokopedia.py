@@ -21,6 +21,8 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
+from indoscraping_core import get_installed_chrome_version
+
 def get_driver():
     options = uc.ChromeOptions()
     options.add_argument('--headless')
@@ -28,7 +30,7 @@ def get_driver():
     options.add_argument('--disable-dev-shm-usage')
     options.add_argument('--window-size=1920,1080')
     options.add_argument('--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36')
-    driver = uc.Chrome(options=options, version_main=147)
+    driver = uc.Chrome(options=options, version_main=get_installed_chrome_version())
     return driver
 
 def get_categories(driver):

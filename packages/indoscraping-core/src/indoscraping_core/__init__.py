@@ -1,4 +1,4 @@
-from indoscraping_core.dq import (
+from .dq import (
     DataQualityError,
     clean_text,
     parse_numeric_price,
@@ -8,17 +8,17 @@ from indoscraping_core.dq import (
     validate_and_clean_ecommerce,
     get_installed_chrome_version,
 )
-from indoscraping_core.schema_drift import (
+from .schema_drift import (
     SchemaDriftError,
     SchemaHealthReport,
     EcommerceProductModel,
     NewsArticleModel,
     detect_schema_drift,
 )
-from indoscraping_core.http import fetch_stealth_json, get_proxy_config
-from indoscraping_core.logging import setup_enterprise_logging, StructuredJsonFormatter
-from indoscraping_core.lineage import collect_lineage
-from indoscraping_core.output import write_json, write_latest_and_history
+from .http import fetch_stealth_json, get_proxy_config
+from .logging import setup_enterprise_logging, StructuredJsonFormatter
+from .lineage import collect_lineage
+from .output import write_json, write_latest_and_history
 
 __all__ = [
     "DataQualityError",

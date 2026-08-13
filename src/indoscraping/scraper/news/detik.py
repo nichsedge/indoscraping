@@ -98,8 +98,8 @@ def get_max_page(kanal_url, date_str):
         logger.exception(f"Unexpected error while getting max page: {e}")
         return 1
 
-def scrape_articles(kanal_url, date_str):
-    """Scrape all article URLs from a kanal for a specific date."""
+def scrape_articles(kanal_url, date_str, target_limit: int = 10):
+    """Scrape article URLs from a kanal for a specific date with early stopping."""
     logger.info(f"Starting article scraping for {kanal_url} on {date_str}")
     
     try:
@@ -113,7 +113,7 @@ def scrape_articles(kanal_url, date_str):
             logger.debug(f"Fetching page {page}/{max_page}: {url}")
             
             try:
-                resp = requests.get(url, headers=HEADERS)
+                resp = requests.get(url, headers=HEADERS, timeout=10)
                 resp.raise_for_status()
                 soup = BeautifulSoup(resp.text, "html.parser")
                 
@@ -127,6 +127,10 @@ def scrape_articles(kanal_url, date_str):
                 
                 articles.extend(page_articles)
                 logger.debug(f"Page {page}: found {len(page_articles)} articles")
+
+                if len(articles) >= target_limit:
+                    logger.info(f"Reached target article limit ({target_limit}). Stopping pagination.")
+                    break
                 
             except requests.RequestException as e:
                 logger.error(f"Failed to fetch page {page} for {kanal_url}: {e}")
@@ -221,6 +225,7 @@ def main():
 
     parser = argparse.ArgumentParser(description="Scrape articles from Detik.com")
     parser.add_argument("--date", default=default_date, help="Date to scrape in MM/DD/YYYY format (default: today)")
+    parser.add_argument("--limit-categories", type=int, default=1, help="Max categories to scan (default: 1)")
     parser.add_argument("--limit-articles", type=int, default=2, help="Max articles to scrape (default: 2)")
     parser.add_argument("--output", default="data/news/detik/latest.json", help="Output path for the latest scraping results")
     parser.add_argument("--log-level", default="INFO", choices=["DEBUG", "INFO", "WARNING", "ERROR"], help="Logging level")
@@ -237,7 +242,7 @@ def main():
     seen_urls = set()
     
     # Get article links
-    article_links = scrape_articles('https://news.detik.com/indeks', date_str)
+    article_links = scrape_articles('https://news.detik.com/indeks', date_str, target_limit=args.limit_articles)
     logger.info(f"Found {len(article_links)} total article links")
     
     # Scrape individual articles

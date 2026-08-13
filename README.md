@@ -94,25 +94,54 @@ All news crawlers accept a standard CLI interface for runtime overrides:
 
 ---
 
-## 🌐 Supported Sites
+## 🔍 Scraper Directory & Standalone Packages (SEO Index)
 
-### News Portals
-- **Bisnis.com**: Business and financial market indices.
-- **CNBC Indonesia**: High-performance multi-threaded crawler.
-- **CNN Indonesia**: General national and international news.
-- **Detik.com**: Fast portal index crawler.
-- **Kompas.com**: National and regional general news.
-- **Narasi.tv**: Investigative news scraper powered by `curl_cffi` to bypass TLS detection.
+For users searching for site-specific scrapers, individual packages are published standalone and can be installed independently or run via the central `indoscraping` visual CLI:
 
-### Finance & Digital Banks
-- **Playwright Crawlers**: Fetches interest rate options from:
-  - *Jenius (BTPN)*, *Bank Jago*, *SeaBank*, *blu by BCA Digital*, *LINE Bank*, *Bank Neo Commerce*, *Krom Bank*, *Superbank*.
+| Target Site / Search Query | Package Name | Standalone CLI | Module Path |
+| :--- | :--- | :--- | :--- |
+| **Blibli Scraper** (`blibli-scraper`) | `blibli-scraper` | `blibli-scraper` | `packages/blibli-scraper` |
+| **Tokopedia Scraper** (`tokopedia-scraper`) | `tokopedia-scraper` | `tokopedia-scraper` | `packages/tokopedia-scraper` |
+| **Alfagift Scraper** (`alfagift-scraper`) | `alfagift-scraper` | `alfagift-scraper` | `packages/alfagift-scraper` |
+| **Klik Indomaret Scraper** (`indomaret-scraper`) | `indomaret-scraper` | `indomaret-scraper` | `packages/indomaret-scraper` |
+| **IDX BEI Stock Scraper** | `idx-bei` | `idx-bei` | External Repository |
+| **Detik.com News Scraper** | `indoscraping` | `indoscraping run detik` | `src/indoscraping/scraper/news/detik.py` |
+| **Bisnis.com Scraper** | `indoscraping` | `indoscraping run bisnis` | `src/indoscraping/scraper/news/bisnis.py` |
+| **CNBC Indonesia Scraper** | `indoscraping` | `indoscraping run cnbc` | `src/indoscraping/scraper/news/cnbc.py` |
+| **CNN Indonesia Scraper** | `indoscraping` | `indoscraping run cnn` | `src/indoscraping/scraper/news/cnn.py` |
+| **Kompas.com Scraper** | `indoscraping` | `indoscraping run kompas` | `src/indoscraping/scraper/news/kompas.py` |
+| **Narasi.tv Scraper** | `indoscraping` | `indoscraping run narasi` | `src/indoscraping/scraper/news/narasi.py` |
+| **Digital Bank Rates Scraper** | `indoscraping` | `indoscraping run banks` | `src/indoscraping/scraper/finance/rates.py` |
 
-### E-Commerce & Retail
-- **Alfagift**: API scraper mimicking corporate app handshakes with resilience checkpointing.
-- **Klik Indomaret**: Fast inventory API scraper.
-- **Blibli**: Category discovery and keyword search-based Playwright scrapers.
-- **Tokopedia**: Holistic product category scrapers.
+---
+
+## 🏛️ Modular Workspace Architecture (`uv workspace`)
+
+This repository is structured as a **`uv` Workspace** to balance high discoverability with zero code duplication:
+
+```
+indoscraping/
+├── pyproject.toml               # Root Workspace Configuration
+├── packages/
+│   ├── indoscraping-core/       # Core Engine: Data Quality (dq.py), Lineage & Atomic Output
+│   ├── blibli-scraper/          # Standalone Blibli Search & Category Scraper Package
+│   ├── tokopedia-scraper/       # Standalone Tokopedia Catalog & Category Scraper Package
+│   ├── alfagift-scraper/        # Standalone Alfamart Alfagift Catalog Scraper Package
+│   └── indomaret-scraper/       # Standalone Klik Indomaret Catalog Scraper Package
+├── src/indoscraping/            # Centralized Visual CLI Dashboard (`rich` UI)
+└── docs/
+    └── STANDALONE_REPOS.md      # Standalone GitHub Repository Mirror Guide
+```
+
+### Standalone Package Installation
+```bash
+# Install individual e-commerce scrapers standalone
+pip install blibli-scraper
+pip install tokopedia-scraper
+pip install alfagift-scraper
+pip install indomaret-scraper
+pip install indoscraping-core
+```
 
 ---
 

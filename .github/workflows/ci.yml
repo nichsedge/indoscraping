@@ -1,38 +1,23 @@
-# name: Enterprise CI/CD Pipeline
+name: CI
 
-# on:
-#   push:
-#     branches: [ main ]
-#   pull_request:
-#     branches: [ main ]
+on:
+  push:
+    branches: [main]
+  pull_request:
 
-# jobs:
-#   test-and-validate:
-#     runs-on: ubuntu-latest
-#     steps:
-#       - name: Checkout Repository
-#         uses: actions/checkout@v4
-
-#       - name: Install Astral uv
-#         uses: astral-sh/setup-uv@v3
-#         with:
-#           version: "latest"
-
-#       - name: Setup Python
-#         uses: actions/setup-python@v5
-#         with:
-#           python-version: "3.12"
-
-#       - name: Install Dependencies
-#         run: uv sync
-
-#       - name: Run Pytest Suite
-#         run: uv run pytest
-
-#       - name: Validate Workspace Build Artifacts
-#         run: |
-#           uv build --package indoscraping-core
-#           uv build --package blibli-scraper
-#           uv build --package tokopedia-scraper
-#           uv build --package alfagift-scraper
-#           uv build --package indomaret-scraper
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.12"
+      - run: uv sync --locked
+      - name: Validate workspace build artifacts
+        run: |
+          uv build --package indoscraping-core
+          uv build --package blibli-scraper
+          uv build --package tokopedia-scraper
+          uv build --package alfagift-scraper
+          uv build --package indomaret-scraper

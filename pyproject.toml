@@ -3,7 +3,7 @@ name = "indoscraping"
 version = "0.1.0"
 description = "Unified web scraper suite & visual CLI dashboard for Indonesian news, e-commerce (Tokopedia, Blibli, Alfagift, Klik Indomaret), and digital banks."
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.14.7"
 keywords = [
     "indoscraping",
     "blibli",
@@ -30,20 +30,20 @@ dependencies = [
     "alfagift-scraper",
     "indomaret-scraper",
     "setuptools",
-    "beautifulsoup4>=4.13.4",
-    "curl-cffi>=0.15.0",
+    "beautifulsoup4>=4.15.0",
+    "curl-cffi>=0.16.2",
     "fake-useragent>=2.2.0",
     "httpx[http2]>=0.28.1",
-    "pandas>=3.0.2",
-    "pendulum>=3.1.0",
-    "playwright>=1.58.0",
+    "pandas>=3.0.5",
+    "pendulum>=3.2.0",
+    "playwright>=1.62.0",
     "playwright-stealth>=2.0.3",
-    "pydantic>=2.13.3",
-    "requests>=2.32.4",
+    "pydantic>=2.13.4",
+    "requests>=2.34.2",
     "rich>=15.0.0",
-    "pytest>=8.0.0",
-    "pillow>=12.2.0",
-    "pyarrow>=25.0.0",
+    "pytest>=8.4.2",
+    "pillow>=12.3.0",
+    "pyarrow>=25.0.1",
 ]
 
 [project.optional-dependencies]
@@ -74,6 +74,6 @@ alfagift-scraper = { workspace = true }
 indomaret-scraper = { workspace = true }
 
 [build-system]
-requires = ["uv_build>=0.8.2,<0.9.0"]
+requires = ["uv_build>=0.12.5,<0.12.6"]
 build-backend = "uv_build"
 

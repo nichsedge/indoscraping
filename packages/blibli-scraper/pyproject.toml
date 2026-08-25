@@ -3,14 +3,14 @@ name = "blibli-scraper"
 version = "0.1.0"
 description = "Standalone Blibli e-commerce product search & holistic category scraper for Python."
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.14.7"
 keywords = ["blibli", "blibli-scraper", "ecommerce-scraper", "indonesia", "indoscraping", "scraping", "blibli-com"]
 dependencies = [
     "indoscraping-core",
     "setuptools",
-    "playwright>=1.58.0",
+    "playwright>=1.62.0",
     "playwright-stealth>=2.0.3",
-    "beautifulsoup4>=4.13.4",
+    "beautifulsoup4>=4.15.0",
 ]
 
 [project.scripts]
@@ -20,5 +20,5 @@ blibli-scraper = "blibli_scraper.cli:main"
 blibli = "blibli_scraper.cli:main"
 
 [build-system]
-requires = ["uv_build>=0.8.2,<0.9.0"]
+requires = ["uv_build>=0.12.5,<0.12.6"]
 build-backend = "uv_build"

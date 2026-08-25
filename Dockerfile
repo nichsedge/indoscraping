@@ -1,6 +1,6 @@
 # Multi-stage Enterprise Production Dockerfile for IndoScraping
 
-FROM mcr.microsoft.com/playwright/python:v1.48.0-noble AS base
+FROM mcr.microsoft.com/playwright/python:v1.62.0-noble AS base
 
 WORKDIR /app
 

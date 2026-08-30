@@ -9,10 +9,10 @@ dependencies = [
     "fake-useragent>=2.2.0",
     "httpx[http2]>=0.28.1",
     "pandas>=3.0.5",
-    "pydantic>=2.13.4",
+    "pydantic>=2.13.5",
     "rich>=15.0.0",
 ]
 
 [build-system]
-requires = ["uv_build>=0.12.5,<0.12.6"]
+requires = ["uv_build>=0.12.7,<0.12.8"]
 build-backend = "uv_build"

@@ -17,5 +17,5 @@ alfagift-scraper = "alfagift_scraper.cli:main"
 alfagift = "alfagift_scraper.cli:main"
 
 [build-system]
-requires = ["uv_build>=0.12.5,<0.12.6"]
+requires = ["uv_build>=0.12.7,<0.12.8"]
 build-backend = "uv_build"

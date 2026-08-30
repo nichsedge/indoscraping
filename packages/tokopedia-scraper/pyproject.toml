@@ -10,7 +10,7 @@ dependencies = [
     "setuptools",
     "beautifulsoup4>=4.15.0",
     "pandas>=3.0.5",
-    "selenium>=4.47.0",
+    "selenium>=4.48.0",
     "undetected-chromedriver>=3.5.5",
 ]
 
@@ -21,5 +21,5 @@ tokopedia-scraper = "tokopedia_scraper.cli:main"
 tokopedia = "tokopedia_scraper.cli:main"
 
 [build-system]
-requires = ["uv_build>=0.12.5,<0.12.6"]
+requires = ["uv_build>=0.12.7,<0.12.8"]
 build-backend = "uv_build"

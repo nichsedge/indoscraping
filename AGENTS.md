@@ -66,6 +66,8 @@ data/
 ├── ecommerce/
 │   ├── alfagift/latest.json & history/YYYY-MM-DD.json
 │   └── indomaret/latest.json & history/YYYY-MM-DD.json
+├── property/
+│   └── jendela360/latest.json & history/YYYY-MM-DD.json
 └── latest.json (Finance banks scraper outputs)
 ```
 
@@ -100,6 +102,8 @@ All news crawlers accept standard argparse parameter structures for dynamic over
   - `blibli_search.py` — Playwright search results crawler with retry logic.
   - `blibli_holistic.py` — Python category discovery and product scraper.
   - `tokopedia.py` — Selenium/Undetected Chromedriver category crawler.
+- **Property Scrapers**: [src/indoscraping/scraper/property/](file:///home/al/Projects/indoscraping/src/indoscraping/scraper/property/)
+  - `jendela360.py` — High-performance property scraper extracting listings (apartments, houses, lands, offices), complexes, and unit specs via Jendela360 API and Next.js SSR.
 
 ---
 

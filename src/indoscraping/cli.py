@@ -111,6 +111,15 @@ SCRAPERS: Dict[str, Dict[str, Any]] = {
         "desc": "Scrapes interest rates of Jenius, Jago, SeaBank, blu, LineBank, Neo, Krom, Superbank.",
         "output_path": "data/latest.json",
         "env": {"PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1"}
+    },
+    # Property Category
+    "jendela360": {
+        "name": "Jendela360 Property Scraper",
+        "category": "Property",
+        "lang": "Python",
+        "cmd": ["python", "src/indoscraping/scraper/property/jendela360.py"],
+        "desc": "Scrapes apartments, houses, lands, and offices via Jendela360 API & SSR.",
+        "output_path": "data/property/jendela360/latest.json"
     }
 }
 

@@ -7,7 +7,7 @@
 [![License](https://img.shields.io/badge/License-ISC-orange?style=for-the-badge)](https://opensource.org/licenses/ISC)
 [![Code Style](https://img.shields.io/badge/code%20style-ruff-000000.svg?style=for-the-badge&logo=ruff)](https://github.com/astral-sh/ruff)
 
-**A premium, unified collection of web scrapers designed to extract news, financial bank rates, and e-commerce product information (Tokopedia, Blibli, Alfagift, Klik Indomaret) from prominent Indonesian web portals. Driven by a visual terminal CLI dashboard.**
+**A premium, unified collection of web scrapers designed to extract news, financial bank rates, e-commerce products (Tokopedia, Blibli, Alfagift, Klik Indomaret), and real estate property data (Jendela360) from prominent Indonesian web portals. Driven by a visual terminal CLI dashboard.**
 
 </div>
 
@@ -83,6 +83,11 @@ uv run indoscraping run indomaret
 
 # Run digital bank rates crawler
 uv run indoscraping run banks
+
+# Run real estate property scraper (Jendela360)
+uv run indoscraping run jendela360 --limit-pages 5 --category apartment --deal-type rent
+uv run src/indoscraping/scraper/property/jendela360.py --mode apartments --limit-pages 5
+uv run src/indoscraping/scraper/property/jendela360.py --mode autocomplete --query "kuningan"
 ```
 
 ---
@@ -107,6 +112,7 @@ For users searching for site-specific scrapers, individual packages are publishe
 | **Tokopedia Scraper** (`tokopedia-scraper`) | `tokopedia-scraper` | `tokopedia-scraper` | `packages/tokopedia-scraper` |
 | **Alfagift Scraper** (`alfagift-scraper`) | `alfagift-scraper` | `alfagift-scraper` | `packages/alfagift-scraper` |
 | **Klik Indomaret Scraper** (`indomaret-scraper`) | `indomaret-scraper` | `indomaret-scraper` | `packages/indomaret-scraper` |
+| **Jendela360 Property Scraper** | `indoscraping` | `indoscraping run jendela360` | `src/indoscraping/scraper/property/jendela360.py` |
 | **IDX BEI Stock Scraper** | `idx-bei` | `idx-bei` | External Repository |
 | **Detik.com News Scraper** | `indoscraping` | `indoscraping run detik` | `src/indoscraping/scraper/news/detik.py` |
 | **Bisnis.com Scraper** | `indoscraping` | `indoscraping run bisnis` | `src/indoscraping/scraper/news/bisnis.py` |
@@ -163,6 +169,8 @@ data/
 ├── ecommerce/
 │   ├── alfagift/latest.json & history/YYYY-MM-DD.json
 │   └── indomaret/latest.json & history/YYYY-MM-DD.json
+├── property/
+│   └── jendela360/latest.json & history/YYYY-MM-DD.json
 └── latest.json (Finance banks rates scraper outputs)
 ```
 

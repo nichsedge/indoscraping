@@ -67,7 +67,8 @@ data/
 │   ├── alfagift/latest.json & history/YYYY-MM-DD.json
 │   └── indomaret/latest.json & history/YYYY-MM-DD.json
 ├── property/
-│   └── jendela360/latest.json & history/YYYY-MM-DD.json
+│   ├── jendela360/latest.json & history/YYYY-MM-DD.json
+│   └── sewakost/latest.json & history/YYYY-MM-DD.json
 └── latest.json (Finance banks scraper outputs)
 ```
 
@@ -104,6 +105,7 @@ All news crawlers accept standard argparse parameter structures for dynamic over
   - `tokopedia.py` — Selenium/Undetected Chromedriver category crawler.
 - **Property Scrapers**: [src/indoscraping/scraper/property/](file:///home/al/Projects/indoscraping/src/indoscraping/scraper/property/)
   - `jendela360.py` — High-performance property scraper extracting listings (apartments, houses, lands, offices), complexes, and unit specs via Jendela360 API and Next.js SSR.
+  - `sewakost.py` — Direct-from-owner affordable boarding house (kost) scraper with direct WhatsApp/phone numbers, facilities, and pricing.
 
 ---
 

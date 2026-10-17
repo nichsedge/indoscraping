@@ -84,10 +84,11 @@ uv run indoscraping run indomaret
 # Run digital bank rates crawler
 uv run indoscraping run banks
 
-# Run real estate property scraper (Jendela360)
+# Run real estate & kost scrapers (Jendela360 & SewaKost)
 uv run indoscraping run jendela360 --limit-pages 5 --category apartment --deal-type rent
 uv run src/indoscraping/scraper/property/jendela360.py --mode apartments --limit-pages 5
 uv run src/indoscraping/scraper/property/jendela360.py --mode autocomplete --query "kuningan"
+uv run indoscraping run sewakost --area jakarta/jakarta-barat/palmerah --max-pages 2
 ```
 
 ---
@@ -113,6 +114,7 @@ For users searching for site-specific scrapers, individual packages are publishe
 | **Alfagift Scraper** (`alfagift-scraper`) | `alfagift-scraper` | `alfagift-scraper` | `packages/alfagift-scraper` |
 | **Klik Indomaret Scraper** (`indomaret-scraper`) | `indomaret-scraper` | `indomaret-scraper` | `packages/indomaret-scraper` |
 | **Jendela360 Property Scraper** | `indoscraping` | `indoscraping run jendela360` | `src/indoscraping/scraper/property/jendela360.py` |
+| **SewaKost Boarding House Scraper** | `indoscraping` | `indoscraping run sewakost` | `src/indoscraping/scraper/property/sewakost.py` |
 | **IDX BEI Stock Scraper** | `idx-bei` | `idx-bei` | External Repository |
 | **Detik.com News Scraper** | `indoscraping` | `indoscraping run detik` | `src/indoscraping/scraper/news/detik.py` |
 | **Bisnis.com Scraper** | `indoscraping` | `indoscraping run bisnis` | `src/indoscraping/scraper/news/bisnis.py` |
@@ -170,7 +172,8 @@ data/
 │   ├── alfagift/latest.json & history/YYYY-MM-DD.json
 │   └── indomaret/latest.json & history/YYYY-MM-DD.json
 ├── property/
-│   └── jendela360/latest.json & history/YYYY-MM-DD.json
+│   ├── jendela360/latest.json & history/YYYY-MM-DD.json
+│   └── sewakost/latest.json & history/YYYY-MM-DD.json
 └── latest.json (Finance banks rates scraper outputs)
 ```
 

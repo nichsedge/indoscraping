@@ -120,6 +120,14 @@ SCRAPERS: Dict[str, Dict[str, Any]] = {
         "cmd": ["python", "src/indoscraping/scraper/property/jendela360.py"],
         "desc": "Scrapes apartments, houses, lands, and offices via Jendela360 API & SSR.",
         "output_path": "data/property/jendela360/latest.json"
+    },
+    "sewakost": {
+        "name": "SewaKost.com Boarding House Scraper",
+        "category": "Property",
+        "lang": "Python",
+        "cmd": ["python", "src/indoscraping/scraper/property/sewakost.py"],
+        "desc": "Scrapes affordable kost listings, direct owner WhatsApp/phone contacts, and facilities.",
+        "output_path": "data/property/sewakost/latest.json"
     }
 }
 

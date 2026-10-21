@@ -34,10 +34,14 @@ uv run indoscraping run <scraper_id> [optional_arguments]
 # 5. Batch execute multiple scrapers sequentially
 uv run indoscraping run-all [--category <category>] [--limit-categories <N>] [--limit-articles <M>]
 
+# 6. Export Scraped Datasets (Parquet / CSV)
+uv run indoscraping export <scraper_id> [--format parquet|csv] [--output <path>]
+
 # Examples:
 uv run indoscraping run cnbc --limit-categories 1 --limit-articles 3
 uv run indoscraping run sewakost --limit-articles 2
 uv run indoscraping inspect sewakost
+uv run indoscraping export rumah123 --format parquet
 uv run indoscraping run-all --category news
 uv run indoscraping run-all --category property
 uv run indoscraping run-all --limit-articles 1 --limit-categories 1

@@ -384,6 +384,74 @@ def inspect_scraper_data(sid: str) -> None:
     console.print(table)
 
 
+def export_scraper_data(sid: str, export_format: str = "parquet", output_path: str = None) -> bool:
+    if sid not in SCRAPERS:
+        console.print(f"[bold red]Error: Scraper '{sid}' not found![/bold red]")
+        return False
+
+    info = SCRAPERS[sid]
+    in_path = info["output_path"]
+    if not os.path.exists(in_path):
+        console.print(f"[bold yellow]No data found at {in_path}. Run 'indoscraping run {sid}' first.[/bold yellow]")
+        return False
+
+    try:
+        import pandas as pd
+        with open(in_path, "r", encoding="utf-8") as f:
+            raw_data = json.load(f)
+
+        records = raw_data if isinstance(raw_data, list) else raw_data.get("items", raw_data.get("data", [raw_data]))
+        if not isinstance(records, list) or not records:
+            console.print(f"[bold yellow]No tabular records found in {in_path} to export.[/bold yellow]")
+            return False
+
+        # Flatten / serialize nested dicts and lists so pyarrow/pandas can write cleanly
+        clean_rows = []
+        for r in records:
+            if not isinstance(r, dict):
+                clean_rows.append({"value": str(r)})
+                continue
+            row_copy = {}
+            for k, v in r.items():
+                if isinstance(v, (list, dict)):
+                    row_copy[k] = json.dumps(v, ensure_ascii=False)
+                else:
+                    row_copy[k] = v
+            clean_rows.append(row_copy)
+
+        df = pd.DataFrame(clean_rows)
+
+        fmt = export_format.lower().strip()
+        if not output_path:
+            base, _ = os.path.splitext(in_path)
+            output_path = f"{base}.{fmt}"
+
+        os.makedirs(os.path.dirname(output_path) or ".", exist_ok=True)
+
+        if fmt == "parquet":
+            df.to_parquet(output_path, engine="pyarrow", index=False)
+        elif fmt == "csv":
+            df.to_csv(output_path, index=False)
+        else:
+            console.print(f"[bold red]Unsupported format: {fmt}. Use 'parquet' or 'csv'.[/bold red]")
+            return False
+
+        size = os.path.getsize(output_path)
+        console.print(Panel(
+            f"[bold green]✓ Successfully exported {len(df)} records![/bold green]\n"
+            f"[bold white]Format:[/bold white] {fmt.upper()}\n"
+            f"[bold white]Source:[/bold white] {in_path}\n"
+            f"[bold white]Destination:[/bold white] [cyan]{output_path}[/cyan] ({size} bytes)",
+            title="Export Complete",
+            border_style="green"
+        ))
+        return True
+
+    except Exception as e:
+        console.print(f"[bold red]Export failed: {e}[/bold red]")
+        return False
+
+
 def interactive_dashboard() -> None:
     while True:
         console.clear()
@@ -393,7 +461,8 @@ def interactive_dashboard() -> None:
         console.print("  1. [bold cyan]List & Run Scrapers[/bold cyan] (Individual / Batch Execution)")
         console.print("  2. [bold cyan]View Output Data & Statistics[/bold cyan]")
         console.print("  3. [bold cyan]Inspect Scraped Records[/bold cyan] (Live Preview)")
-        console.print("  4. [bold cyan]Help & Documentation[/bold cyan]")
+        console.print("  4. [bold cyan]Export Data (Parquet / CSV)[/bold cyan]")
+        console.print("  5. [bold cyan]Help & Documentation[/bold cyan]")
         console.print("  q. [bold red]Quit / Exit[/bold red]")
         console.print()
 
@@ -498,15 +567,30 @@ def interactive_dashboard() -> None:
         elif choice == "4":
             console.clear()
             print_banner()
+            table = list_scrapers_table()
+            console.print(table)
+            console.print()
+            export_sid = console.input("[bold yellow]Enter Scraper ID to export: [/bold yellow]").strip()
+            if export_sid in SCRAPERS:
+                export_fmt = console.input("[bold yellow]Format (parquet/csv, default 'parquet'): [/bold yellow]").strip().lower() or "parquet"
+                console.clear()
+                print_banner()
+                export_scraper_data(export_sid, export_format=export_fmt)
+            else:
+                console.print(f"[bold red]Invalid ID: '{export_sid}'[/bold red]")
+            console.input("\n[dim]Press Enter to continue...[/dim]")
+
+        elif choice == "5":
+            console.clear()
+            print_banner()
             help_text = (
                 "[bold cyan]Indoscraping Scraper Suite[/bold cyan]\n\n"
                 "This collection aggregates various crawlers focused on Indonesian data:\n"
                 "  - [magenta]News[/magenta]: Detik, Bisnis.com, CNBC, CNN, Kompas, Narasi\n"
                 "  - [magenta]E-Commerce[/magenta]: Alfagift, Klik Indomaret, Blibli, Tokopedia\n"
-                "  - [magenta]Property[/magenta]: Jendela360, SewaKost (apartments, houses, boarding houses)\n\n"
-
+                "  - [magenta]Property[/magenta]: Rumah123, SewaKost, Jendela360\n\n"
                 "Dependencies are managed efficiently using [green]uv[/green].\n"
-                "Playwright crawls automatically bypass runtime browser downloads and use local system-installed binaries."
+                "Data can be exported to Parquet and CSV via 'indoscraping export <scraper_id>'."
             )
             console.print(Panel(help_text, border_style="cyan", title="Help & Information"))
             console.input("\n[dim]Press Enter to continue...[/dim]")
@@ -515,7 +599,7 @@ def interactive_dashboard() -> None:
             console.print("[bold green]Thank you for using Indoscraping! Goodbye.[/bold green]")
             break
         else:
-            console.print("[bold red]Invalid choice, please select 1, 2, 3, 4 or q.[/bold red]")
+            console.print("[bold red]Invalid choice, please select 1, 2, 3, 4, 5 or q.[/bold red]")
             time.sleep(1)
 
 
@@ -534,6 +618,12 @@ def main() -> None:
     # Inspect command
     inspect_parser = subparsers.add_parser("inspect", help="Inspect and preview latest scraped data")
     inspect_parser.add_argument("scraper_id", choices=list(SCRAPERS.keys()), help="ID of the scraper to inspect")
+
+    # Export command
+    export_parser = subparsers.add_parser("export", help="Export scraped JSON data to Parquet or CSV")
+    export_parser.add_argument("scraper_id", choices=list(SCRAPERS.keys()), help="ID of the scraper data to export")
+    export_parser.add_argument("--format", choices=["parquet", "csv"], default="parquet", help="Target output format (default: parquet)")
+    export_parser.add_argument("--output", default=None, help="Custom output path")
 
     # Run-all command
     run_all_parser = subparsers.add_parser("run-all", help="Run all scrapers sequentially")
@@ -555,6 +645,9 @@ def main() -> None:
         sys.exit(0 if success else 1)
     elif args.command == "inspect":
         inspect_scraper_data(args.scraper_id)
+    elif args.command == "export":
+        success = export_scraper_data(args.scraper_id, export_format=args.format, output_path=args.output)
+        sys.exit(0 if success else 1)
     elif args.command == "run-all":
         # Identify scrapers to run
         scrapers_to_run = []

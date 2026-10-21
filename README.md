@@ -96,6 +96,10 @@ uv run indoscraping run jendela360 --limit-pages 5 --category apartment --deal-t
 # Batch run scrapers by category
 uv run indoscraping run-all --category property --limit-articles 2
 uv run indoscraping run-all --category news --limit-articles 1
+
+# Export scraped datasets to Parquet or CSV for analytics (DuckDB, Pandas)
+uv run indoscraping export rumah123 --format parquet
+uv run indoscraping export sewakost --format csv
 ```
 
 ---

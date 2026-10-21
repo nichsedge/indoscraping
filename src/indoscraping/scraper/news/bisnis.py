@@ -2,7 +2,9 @@ import requests
 from bs4 import BeautifulSoup
 from datetime import datetime
 import json
+import os
 import re
+from indoscraping_core import write_latest_and_history, collect_lineage
 
 BASE_URL = "https://www.bisnis.com"
 HEADERS = {'User-Agent': 'Mozilla/5.0'}
@@ -116,19 +118,22 @@ def main():
                 article_data['category'] = cat_name
                 all_articles.append(article_data)
 
-    # Standardized output folders
+    # Standardized output folders via indoscraping_core
     output_path = args.output
-    os.makedirs(os.path.dirname(output_path), exist_ok=True)
-    
-    with open(output_path, "w", encoding="utf-8") as f:
-        json.dump(all_articles, f, ensure_ascii=False, indent=2)
-    print(f"Exported {len(all_articles)} articles to {output_path}")
-
-    # Save historical snapshot
     history_path = f"data/news/bisnis/history/{date_str}.json"
-    os.makedirs(os.path.dirname(history_path), exist_ok=True)
-    with open(history_path, "w", encoding="utf-8") as f:
-        json.dump(all_articles, f, ensure_ascii=False, indent=2)
+    meta = collect_lineage("bisnis")
+    meta.update({
+        "date_filter": date_str,
+        "count": len(all_articles),
+        "source": "Bisnis.com"
+    })
+    write_latest_and_history(
+        latest_path=output_path,
+        history_path=history_path,
+        payload=all_articles,
+        meta=meta,
+    )
+    print(f"Exported {len(all_articles)} articles to {output_path}")
     print(f"Saved historical snapshot to {history_path}")
 
 if __name__ == "__main__":

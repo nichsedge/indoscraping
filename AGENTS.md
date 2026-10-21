@@ -25,17 +25,21 @@ uv run indoscraping list
 # 2. View data volume stats, file formats, and last-modified dates
 uv run indoscraping status
 
-# 3. Execute a specific scraper directly
+# 3. Inspect Scraped Records Directly (Terminal Preview)
+uv run indoscraping inspect <scraper_id>
+
+# 4. Execute a specific scraper directly
 uv run indoscraping run <scraper_id> [optional_arguments]
 
-# 4. Batch execute multiple scrapers sequentially
+# 5. Batch execute multiple scrapers sequentially
 uv run indoscraping run-all [--category <category>] [--limit-categories <N>] [--limit-articles <M>]
 
 # Examples:
 uv run indoscraping run cnbc --limit-categories 1 --limit-articles 3
-uv run indoscraping run detik --limit-articles 5
+uv run indoscraping run sewakost --limit-articles 2
+uv run indoscraping inspect sewakost
 uv run indoscraping run-all --category news
-uv run indoscraping run-all --category finance
+uv run indoscraping run-all --category property
 uv run indoscraping run-all --limit-articles 1 --limit-categories 1
 ```
 
@@ -66,10 +70,10 @@ data/
 ├── ecommerce/
 │   ├── alfagift/latest.json & history/YYYY-MM-DD.json
 │   └── indomaret/latest.json & history/YYYY-MM-DD.json
-├── property/
-│   ├── jendela360/latest.json & history/YYYY-MM-DD.json
-│   └── sewakost/latest.json & history/YYYY-MM-DD.json
-└── latest.json (Finance banks scraper outputs)
+└── property/
+    ├── jendela360/latest.json & history/YYYY-MM-DD.json
+    ├── rumah123/latest.json & history/YYYY-MM-DD.json
+    └── sewakost/latest.json & history/YYYY-MM-DD.json
 ```
 
 ---
@@ -94,9 +98,6 @@ All news crawlers accept standard argparse parameter structures for dynamic over
   - `cnn.py` — Standard BS4 parser (formerly `cnnindonesia.py`).
   - `bisnis.py` — Extracts business indices.
   - `narasi.py` — High-performance API scraper using `curl_cffi` to mimic Google Chrome handshakes.
-- **Finance Scrapers**: [src/indoscraping/scraper/finance/](file:///home/al/Projects/indoscraping/src/indoscraping/scraper/finance/)
-  - `rates.py` — Executes interest rate crawls via Playwright (formerly `index.py`).
-  - Uses `BaseScraper` class and custom models (`models.py`).
 - **E-Commerce Scrapers**: [src/indoscraping/scraper/ecommerce/](file:///home/al/Projects/indoscraping/src/indoscraping/scraper/ecommerce/)
   - `alfagift.py` — Impersonated API scraper via `curl_cffi` with resilience checkpointing.
   - `indomaret.py` — Impersonated API scraper via `curl_cffi` with resilience checkpointing.
@@ -104,6 +105,7 @@ All news crawlers accept standard argparse parameter structures for dynamic over
   - `blibli_holistic.py` — Python category discovery and product scraper.
   - `tokopedia.py` — Selenium/Undetected Chromedriver category crawler.
 - **Property Scrapers**: [src/indoscraping/scraper/property/](file:///home/al/Projects/indoscraping/src/indoscraping/scraper/property/)
+  - `rumah123.py` — High-performance property scraper extracting listings (houses, apartments, lands) for sale and rent with prices, specs, locations, and agents via Rumah123 using Chrome TLS impersonation.
   - `jendela360.py` — High-performance property scraper extracting listings (apartments, houses, lands, offices), complexes, and unit specs via Jendela360 API and Next.js SSR.
   - `sewakost.py` — Direct-from-owner affordable boarding house (kost) scraper with direct WhatsApp/phone numbers, facilities, and pricing.
 

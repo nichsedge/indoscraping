@@ -4,6 +4,7 @@ import json
 import time
 from datetime import datetime
 from curl_cffi import requests
+from indoscraping_core import write_latest_and_history, collect_lineage
 
 API_URL = "https://gateway.narasi.tv/core/api/tags/special/1"
 
@@ -66,21 +67,23 @@ def main():
     articles = scrape_narasi(limit_articles=args.limit_articles)
 
     if articles:
-        # Standardized output folders
+        # Standardized output folders via indoscraping_core
         output_path = args.output
-        os.makedirs(os.path.dirname(output_path), exist_ok=True)
-        
-        # Save latest results
-        with open(output_path, "w", encoding="utf-8") as f:
-            json.dump(articles, f, ensure_ascii=False, indent=2)
-        print(f"\nExported {len(articles)} articles to {output_path}")
-
-        # Save historical snapshot
         date_str = args.date
         history_path = f"data/news/narasi/history/{date_str}.json"
-        os.makedirs(os.path.dirname(history_path), exist_ok=True)
-        with open(history_path, "w", encoding="utf-8") as f:
-            json.dump(articles, f, ensure_ascii=False, indent=2)
+        meta = collect_lineage("narasi")
+        meta.update({
+            "date_filter": date_str,
+            "count": len(articles),
+            "source": "Narasi.tv"
+        })
+        write_latest_and_history(
+            latest_path=output_path,
+            history_path=history_path,
+            payload=articles,
+            meta=meta,
+        )
+        print(f"\nExported {len(articles)} articles to {output_path}")
         print(f"Saved historical snapshot to {history_path}")
 
 if __name__ == "__main__":

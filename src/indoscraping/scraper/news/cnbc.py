@@ -8,6 +8,7 @@ import datetime
 import pendulum
 import json
 import os
+from indoscraping_core import write_latest_and_history, collect_lineage
 
 from fake_useragent import UserAgent
 ua = UserAgent()
@@ -324,19 +325,23 @@ def main():
                 "articles": all_articles
             }
             
-            # Save to standard output path
+            # Save via unified indoscraping_core output pipeline
             output_path = args.output
-            os.makedirs(os.path.dirname(output_path), exist_ok=True)
-            with open(output_path, "w", encoding="utf-8") as f:
-                json.dump(export_data, f, ensure_ascii=False, indent=2)
-            logger.info(f"Exported {len(all_articles)} articles to {output_path}")
-
-            # Save historical snapshot
             safe_date_str = date_str.replace("/", "-")
             history_path = f"data/news/cnbc/history/{safe_date_str}.json"
-            os.makedirs(os.path.dirname(history_path), exist_ok=True)
-            with open(history_path, "w", encoding="utf-8") as f:
-                json.dump(export_data, f, ensure_ascii=False, indent=2)
+            meta = collect_lineage("cnbc")
+            meta.update({
+                "date_filter": date_str,
+                "count": len(all_articles),
+                "source": "CNBC Indonesia"
+            })
+            write_latest_and_history(
+                latest_path=output_path,
+                history_path=history_path,
+                payload=all_articles,
+                meta=meta,
+            )
+            logger.info(f"Exported {len(all_articles)} articles to {output_path}")
             logger.info(f"Saved historical snapshot to {history_path}")
         else:
             logger.warning("No articles were scraped")

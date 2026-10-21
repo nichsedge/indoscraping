@@ -476,6 +476,10 @@ def main() -> None:
         enrich_details=args.enrich,
     )
 
+    if not results:
+        logger.warning("No listings were extracted from Jendela360 (upstream API may be down or rate-limited).")
+        return
+
     out_path = Path(args.output_dir)
     save_results(results, out_path, args.date)
 

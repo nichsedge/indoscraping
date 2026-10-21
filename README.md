@@ -8,7 +8,7 @@
 [![License](https://img.shields.io/badge/License-ISC-orange?style=for-the-badge)](https://opensource.org/licenses/ISC)
 [![Code Style](https://img.shields.io/badge/code%20style-ruff-000000.svg?style=for-the-badge&logo=ruff)](https://github.com/astral-sh/ruff)
 
-**A premium, unified collection of web scrapers designed to extract news, financial bank rates, e-commerce products (Tokopedia, Blibli, Alfagift, Klik Indomaret), and real estate property data (Jendela360) from prominent Indonesian web portals. Driven by a visual terminal CLI dashboard.**
+**A premium, unified collection of web scrapers designed to extract news, e-commerce products (Tokopedia, Blibli, Alfagift, Klik Indomaret), and real estate property data (Jendela360, SewaKost) from prominent Indonesian web portals. Driven by a visual terminal CLI dashboard.**
 
 </div>
 
@@ -74,6 +74,10 @@ Execute individual scrapers directly without the interactive dashboard (perfect 
 # List all available scraper keys
 uv run indoscraping list
 
+# Inspect scraped data preview in terminal
+uv run indoscraping inspect sewakost
+uv run indoscraping inspect narasi
+
 # Run a news scraper with options
 uv run indoscraping run cnbc
 uv run indoscraping run detik --limit-articles 5
@@ -83,14 +87,15 @@ uv run indoscraping run narasi --limit-articles 3 --date 2026-05-18
 uv run indoscraping run alfagift
 uv run indoscraping run indomaret
 
-# Run digital bank rates crawler
-uv run indoscraping run banks
-
-# Run real estate & kost scrapers (Jendela360 & SewaKost)
-uv run indoscraping run jendela360 --limit-pages 5 --category apartment --deal-type rent
-uv run src/indoscraping/scraper/property/jendela360.py --mode apartments --limit-pages 5
-uv run src/indoscraping/scraper/property/jendela360.py --mode autocomplete --query "kuningan"
+# Run real estate & kost scrapers (Rumah123, SewaKost, Jendela360)
+uv run indoscraping run rumah123 --limit-articles 5 --deal-type jual --category rumah
+uv run indoscraping run sewakost --limit-articles 2
 uv run indoscraping run sewakost --area jakarta/jakarta-barat/palmerah --max-pages 2
+uv run indoscraping run jendela360 --limit-pages 5 --category apartment --deal-type rent
+
+# Batch run scrapers by category
+uv run indoscraping run-all --category property --limit-articles 2
+uv run indoscraping run-all --category news --limit-articles 1
 ```
 
 ---
@@ -115,6 +120,7 @@ For users searching for site-specific scrapers, individual packages are publishe
 | **Tokopedia Scraper** (`tokopedia-scraper`) | `tokopedia-scraper` | `tokopedia-scraper` | `packages/tokopedia-scraper` |
 | **Alfagift Scraper** (`alfagift-scraper`) | `alfagift-scraper` | `alfagift-scraper` | `packages/alfagift-scraper` |
 | **Klik Indomaret Scraper** (`indomaret-scraper`) | `indomaret-scraper` | `indomaret-scraper` | `packages/indomaret-scraper` |
+| **Rumah123 Property Scraper** | `indoscraping` | `indoscraping run rumah123` | `src/indoscraping/scraper/property/rumah123.py` |
 | **Jendela360 Property Scraper** | `indoscraping` | `indoscraping run jendela360` | `src/indoscraping/scraper/property/jendela360.py` |
 | **SewaKost Boarding House Scraper** | `indoscraping` | `indoscraping run sewakost` | `src/indoscraping/scraper/property/sewakost.py` |
 | **IDX BEI Stock Scraper** | `idx-bei` | `idx-bei` | External Repository |
@@ -124,7 +130,6 @@ For users searching for site-specific scrapers, individual packages are publishe
 | **CNN Indonesia Scraper** | `indoscraping` | `indoscraping run cnn` | `src/indoscraping/scraper/news/cnn.py` |
 | **Kompas.com Scraper** | `indoscraping` | `indoscraping run kompas` | `src/indoscraping/scraper/news/kompas.py` |
 | **Narasi.tv Scraper** | `indoscraping` | `indoscraping run narasi` | `src/indoscraping/scraper/news/narasi.py` |
-| **Digital Bank Rates Scraper** | `indoscraping` | `indoscraping run banks` | `src/indoscraping/scraper/finance/rates.py` |
 
 ---
 
@@ -175,8 +180,8 @@ data/
 │   └── indomaret/latest.json & history/YYYY-MM-DD.json
 ├── property/
 │   ├── jendela360/latest.json & history/YYYY-MM-DD.json
+│   ├── rumah123/latest.json & history/YYYY-MM-DD.json
 │   └── sewakost/latest.json & history/YYYY-MM-DD.json
-└── latest.json (Finance banks rates scraper outputs)
 ```
 
 ---

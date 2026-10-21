@@ -10,6 +10,7 @@ import argparse
 import json
 import logging
 import re
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -38,10 +39,13 @@ DEFAULT_AREAS = [
 
 
 class SewaKostScraper:
-    def __init__(self, timeout: int = 12):
+    def __init__(self, timeout: int = 12, max_workers: int = 5):
         self.timeout = timeout
+        self.max_workers = max_workers
 
-    def fetch_area_listings(self, area_path: str, max_pages: int = 2) -> List[Dict[str, Any]]:
+    def fetch_area_listings(
+        self, area_path: str, max_pages: int = 2, limit: Optional[int] = None
+    ) -> List[Dict[str, Any]]:
         """Fetch list of kost listings from a specific area category."""
         base_area_url = f"{BASE_URL}/kost/{area_path.strip('/')}/"
         logger.info(f"Scanning category: {base_area_url}")
@@ -63,18 +67,30 @@ class SewaKostScraper:
                         kost_urls.add(urljoin(BASE_URL, href))
                         found_page += 1
                 logger.info(f"  Page {page}: found {found_page} listings")
+                if limit and len(kost_urls) >= limit:
+                    break
             except Exception as e:
                 logger.warning(f"Failed page {page} for {area_path}: {e}")
                 break
 
-        logger.info(f"Total unique kost listings to scrape for {area_path}: {len(kost_urls)}")
+        url_list = list(kost_urls)
+        if limit:
+            url_list = url_list[:limit]
 
-        listings = []
-        for url in kost_urls:
-            data = self.scrape_kost_detail(url)
-            if data:
-                data["_area_category"] = area_path
-                listings.append(data)
+        logger.info(f"Total unique kost listings to scrape for {area_path}: {len(url_list)}")
+
+        listings: List[Dict[str, Any]] = []
+        with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
+            future_to_url = {executor.submit(self.scrape_kost_detail, url): url for url in url_list}
+            for future in as_completed(future_to_url):
+                try:
+                    data = future.result()
+                    if data:
+                        data["_area_category"] = area_path
+                        listings.append(data)
+                except Exception as e:
+                    url = future_to_url[future]
+                    logger.warning(f"Failed scraping kost detail for {url}: {e}")
 
         return listings
 
@@ -192,6 +208,19 @@ def main() -> None:
         help="Output directory path",
     )
     parser.add_argument(
+        "--limit-articles",
+        "--limit",
+        type=int,
+        default=None,
+        help="Max number of kost listings to scrape (useful for smoketesting)",
+    )
+    parser.add_argument(
+        "--workers",
+        type=int,
+        default=5,
+        help="Number of concurrent detail scraping workers (default: 5)",
+    )
+    parser.add_argument(
         "--date",
         default=default_date,
         help="Crawl date string",
@@ -199,8 +228,8 @@ def main() -> None:
 
     args = parser.parse_args()
 
-    scraper = SewaKostScraper()
-    results = scraper.fetch_area_listings(args.area, max_pages=args.max_pages)
+    scraper = SewaKostScraper(max_workers=args.workers)
+    results = scraper.fetch_area_listings(args.area, max_pages=args.max_pages, limit=args.limit_articles)
 
     out_path = Path(args.output_dir)
     save_kost_results(results, out_path, args.date)

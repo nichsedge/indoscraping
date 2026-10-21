@@ -1,4 +1,5 @@
 import argparse
+import json
 import os
 import sys
 import subprocess
@@ -102,16 +103,6 @@ SCRAPERS: Dict[str, Dict[str, Any]] = {
         "desc": "Scrapes Tokopedia category tree and product details using Undetected ChromeDriver.",
         "output_path": "data/ecommerce/tokopedia/latest.json"
     },
-    # Finance Category
-    "banks": {
-        "name": "Digital Bank Rates Scraper",
-        "category": "Finance",
-        "lang": "Python (Playwright)",
-        "cmd": ["python", "-m", "src.indoscraping.scraper.finance.rates"],
-        "desc": "Scrapes interest rates of Jenius, Jago, SeaBank, blu, LineBank, Neo, Krom, Superbank.",
-        "output_path": "data/latest.json",
-        "env": {"PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1"}
-    },
     # Property Category
     "jendela360": {
         "name": "Jendela360 Property Scraper",
@@ -128,6 +119,14 @@ SCRAPERS: Dict[str, Dict[str, Any]] = {
         "cmd": ["python", "src/indoscraping/scraper/property/sewakost.py"],
         "desc": "Scrapes affordable kost listings, direct owner WhatsApp/phone contacts, and facilities.",
         "output_path": "data/property/sewakost/latest.json"
+    },
+    "rumah123": {
+        "name": "Rumah123 Property Scraper",
+        "category": "Property",
+        "lang": "Python",
+        "cmd": ["python", "src/indoscraping/scraper/property/rumah123.py"],
+        "desc": "Scrapes property listings (houses, apartments, lands) for sale & rent via Rumah123.",
+        "output_path": "data/property/rumah123/latest.json"
     }
 }
 
@@ -319,6 +318,72 @@ def view_output_statistics() -> None:
     ))
 
 
+def inspect_scraper_data(sid: str) -> None:
+    if sid not in SCRAPERS:
+        console.print(f"[bold red]Error: Scraper '{sid}' not found![/bold red]")
+        return
+
+    info = SCRAPERS[sid]
+    out_path = info["output_path"]
+    if not os.path.exists(out_path):
+        console.print(f"[bold yellow]No data found at {out_path}. Run 'indoscraping run {sid}' first.[/bold yellow]")
+        return
+
+    try:
+        with open(out_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+    except Exception as e:
+        console.print(f"[bold red]Error reading {out_path}: {e}[/bold red]")
+        return
+
+    records = data if isinstance(data, list) else data.get("items", data.get("data", [data]))
+    total = len(records) if isinstance(records, list) else 1
+
+    console.print(Panel(
+        f"[bold white]Scraper:[/bold white] {info['name']} ({sid})\n"
+        f"[bold white]Output Path:[/bold white] {out_path}\n"
+        f"[bold white]Total Items:[/bold white] [green]{total}[/green]",
+        title=f"Data Preview: {sid}",
+        border_style="cyan"
+    ))
+
+    if not records:
+        console.print("[dim]File exists but contains no items (empty dataset).[/dim]")
+        return
+
+    preview_items = records[:5] if isinstance(records, list) else [records]
+    table = Table(title=f"Sample Records (Showing top {len(preview_items)} of {total})", border_style="cyan", show_header=True)
+    table.add_column("#", style="dim", width=4)
+    table.add_column("Title / Item", style="bold white", width=35)
+    table.add_column("Key Info / Price / Date", style="green", width=30)
+    table.add_column("URL / Extra", style="dim cyan", overflow="ellipsis")
+
+    for idx, item in enumerate(preview_items, 1):
+        if not isinstance(item, dict):
+            table.add_row(str(idx), str(item)[:35], "-", "-")
+            continue
+
+        title = item.get("title") or item.get("productName") or item.get("name") or "Unknown"
+        title = str(title).strip().replace("\n", " ")[:35]
+
+        key_info = []
+        if "price" in item or "min_price" in item or "priceRaw" in item or "price_raw" in item:
+            p = item.get("price_raw") or item.get("priceRaw") or item.get("price") or item.get("min_price")
+            key_info.append(f"Price: {p}")
+        if "date" in item or "published_at" in item or "pubDate" in item or "scraped_at" in item:
+            d = item.get("pubDate") or item.get("published_at") or item.get("date") or item.get("scraped_at")
+            key_info.append(f"{str(d)[:16]}")
+        if "category" in item:
+            key_info.append(f"Cat: {item['category']}")
+
+        info_str = " | ".join(key_info) if key_info else "-"
+        url_str = item.get("url") or item.get("productUrl") or item.get("link") or "-"
+
+        table.add_row(str(idx), title, info_str, str(url_str))
+
+    console.print(table)
+
+
 def interactive_dashboard() -> None:
     while True:
         console.clear()
@@ -327,7 +392,8 @@ def interactive_dashboard() -> None:
         console.print(Align.center("[bold white]====== MAIN MENU ======[/bold white]\n"))
         console.print("  1. [bold cyan]List & Run Scrapers[/bold cyan] (Individual / Batch Execution)")
         console.print("  2. [bold cyan]View Output Data & Statistics[/bold cyan]")
-        console.print("  3. [bold cyan]Help & Documentation[/bold cyan]")
+        console.print("  3. [bold cyan]Inspect Scraped Records[/bold cyan] (Live Preview)")
+        console.print("  4. [bold cyan]Help & Documentation[/bold cyan]")
         console.print("  q. [bold red]Quit / Exit[/bold red]")
         console.print()
 
@@ -341,7 +407,7 @@ def interactive_dashboard() -> None:
                 console.print(table)
                 console.print()
                 console.print("[dim]Enter the Scraper ID to start running, or 'b' to go back.[/dim]")
-                console.print("[dim]Or run multiple: 'all', 'all:news', 'all:ecommerce', 'all:finance'[/dim]")
+                console.print("[dim]Or run multiple: 'all', 'all:news', 'all:ecommerce', 'all:property'[/dim]")
                 scraper_choice = console.input("[bold yellow]Run Scraper ID: [/bold yellow]").strip()
 
                 if scraper_choice.lower() == "b":
@@ -375,12 +441,14 @@ def interactive_dashboard() -> None:
                     
                     for sid, info in scrapers_to_run:
                         console.print(f"\n[bold yellow]>>> [{info['category']}] Executing {info['name']} ({sid})...[/bold yellow]")
-                        # For batch interactive run, we add brief smoketest parameters to news crawlers so they complete rapidly.
+                        # For batch interactive run, we add brief smoketest parameters to crawlers so they complete rapidly.
                         extra_args = []
                         if info["category"] == "News" or sid in ["alfagift", "indomaret"]:
                             extra_args.extend(["--limit-categories", "1", "--limit-articles", "2"])
-                        elif sid in ["detik", "narasi", "bisnis", "cnn", "kompas", "cnbc"]:
+                        elif sid in ["detik", "narasi", "bisnis", "cnn", "kompas", "cnbc", "sewakost", "rumah123"]:
                             extra_args.extend(["--limit-articles", "2"])
+                        elif sid == "jendela360":
+                            extra_args.extend(["--limit-pages", "1"])
                             
                         success = run_scraper_subprocess(sid, extra_args)
                         if success:
@@ -415,12 +483,28 @@ def interactive_dashboard() -> None:
         elif choice == "3":
             console.clear()
             print_banner()
+            table = list_scrapers_table()
+            console.print(table)
+            console.print()
+            inspect_sid = console.input("[bold yellow]Enter Scraper ID to inspect: [/bold yellow]").strip()
+            if inspect_sid in SCRAPERS:
+                console.clear()
+                print_banner()
+                inspect_scraper_data(inspect_sid)
+            else:
+                console.print(f"[bold red]Invalid ID: '{inspect_sid}'[/bold red]")
+            console.input("\n[dim]Press Enter to continue...[/dim]")
+
+        elif choice == "4":
+            console.clear()
+            print_banner()
             help_text = (
                 "[bold cyan]Indoscraping Scraper Suite[/bold cyan]\n\n"
                 "This collection aggregates various crawlers focused on Indonesian data:\n"
                 "  - [magenta]News[/magenta]: Detik, Bisnis.com, CNBC, CNN, Kompas, Narasi\n"
                 "  - [magenta]E-Commerce[/magenta]: Alfagift, Klik Indomaret, Blibli, Tokopedia\n"
-                "  - [magenta]Finance[/magenta]: Digital bank rates (Jago, SeaBank, Jenius, etc.)\n\n"
+                "  - [magenta]Property[/magenta]: Jendela360, SewaKost (apartments, houses, boarding houses)\n\n"
+
                 "Dependencies are managed efficiently using [green]uv[/green].\n"
                 "Playwright crawls automatically bypass runtime browser downloads and use local system-installed binaries."
             )
@@ -431,7 +515,7 @@ def interactive_dashboard() -> None:
             console.print("[bold green]Thank you for using Indoscraping! Goodbye.[/bold green]")
             break
         else:
-            console.print("[bold red]Invalid choice, please select 1, 2, 3 or q.[/bold red]")
+            console.print("[bold red]Invalid choice, please select 1, 2, 3, 4 or q.[/bold red]")
             time.sleep(1)
 
 
@@ -447,11 +531,16 @@ def main() -> None:
     run_parser.add_argument("scraper_id", choices=list(SCRAPERS.keys()), help="ID of the scraper to run")
     run_parser.add_argument("scraper_args", nargs=argparse.REMAINDER, help="Additional optional arguments for the scraper script")
 
+    # Inspect command
+    inspect_parser = subparsers.add_parser("inspect", help="Inspect and preview latest scraped data")
+    inspect_parser.add_argument("scraper_id", choices=list(SCRAPERS.keys()), help="ID of the scraper to inspect")
+
     # Run-all command
     run_all_parser = subparsers.add_parser("run-all", help="Run all scrapers sequentially")
-    run_all_parser.add_argument("--category", choices=["news", "ecommerce", "finance"], type=str.lower, help="Filter scrapers by category")
+    categories = sorted(list({v["category"].lower() for v in SCRAPERS.values()}))
+    run_all_parser.add_argument("--category", choices=categories, type=str.lower, help="Filter scrapers by category")
     run_all_parser.add_argument("--limit-categories", type=int, help="Override --limit-categories argument for news scrapers")
-    run_all_parser.add_argument("--limit-articles", type=int, help="Override --limit-articles argument for news/ecommerce scrapers")
+    run_all_parser.add_argument("--limit-articles", type=int, help="Override --limit-articles argument for news/ecommerce/property scrapers")
 
     # Status command
     subparsers.add_parser("status", help="Show scraped output files and data metrics")
@@ -464,6 +553,8 @@ def main() -> None:
     elif args.command == "run":
         success = run_scraper_subprocess(args.scraper_id, args.scraper_args)
         sys.exit(0 if success else 1)
+    elif args.command == "inspect":
+        inspect_scraper_data(args.scraper_id)
     elif args.command == "run-all":
         # Identify scrapers to run
         scrapers_to_run = []
@@ -489,8 +580,10 @@ def main() -> None:
             if args.limit_categories and (info["category"] == "News" or sid in ["alfagift", "indomaret"]):
                 extra_args.extend(["--limit-categories", str(args.limit_categories)])
             if args.limit_articles:
-                if info["category"] == "News" or sid in ["detik", "narasi", "bisnis", "cnn", "kompas", "cnbc", "alfagift", "indomaret"]:
+                if info["category"] == "News" or sid in ["detik", "narasi", "bisnis", "cnn", "kompas", "cnbc", "alfagift", "indomaret", "sewakost", "rumah123"]:
                     extra_args.extend(["--limit-articles", str(args.limit_articles)])
+                elif sid == "jendela360":
+                    extra_args.extend(["--limit-pages", "1"])
             
             console.print(f"\n[bold yellow]>>> [{info['category']}] Executing {info['name']} ({sid})...[/bold yellow]")
             success = run_scraper_subprocess(sid, extra_args)

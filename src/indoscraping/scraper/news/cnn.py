@@ -3,6 +3,8 @@ from bs4 import BeautifulSoup
 from datetime import datetime
 import time
 import json
+import os
+from indoscraping_core import write_latest_and_history, collect_lineage
 
 BASE_URL = "https://www.cnnindonesia.com"
 INDEX_URL = f"{BASE_URL}/indeks"
@@ -84,21 +86,23 @@ def main():
             except Exception as e:
                 print(f"Error scraping {link}: {e}")
     
-    # Standardized output folders
+    # Standardized output folders via indoscraping_core
     output_path = args.output
-    os.makedirs(os.path.dirname(output_path), exist_ok=True)
-    
-    with open(output_path, "w", encoding="utf-8") as f:
-        json.dump(all_articles, f, ensure_ascii=False, indent=2)
-    print(f"Exported {len(all_articles)} articles to {output_path}")
-
-    # Save historical snapshot
-    # Convert date format to use dashes for file safety
     safe_date_str = DATE.replace("/", "-")
     history_path = f"data/news/cnn/history/{safe_date_str}.json"
-    os.makedirs(os.path.dirname(history_path), exist_ok=True)
-    with open(history_path, "w", encoding="utf-8") as f:
-        json.dump(all_articles, f, ensure_ascii=False, indent=2)
+    meta = collect_lineage("cnn")
+    meta.update({
+        "date_filter": DATE,
+        "count": len(all_articles),
+        "source": "CNN Indonesia"
+    })
+    write_latest_and_history(
+        latest_path=output_path,
+        history_path=history_path,
+        payload=all_articles,
+        meta=meta,
+    )
+    print(f"Exported {len(all_articles)} articles to {output_path}")
     print(f"Saved historical snapshot to {history_path}")
 
 if __name__ == "__main__":

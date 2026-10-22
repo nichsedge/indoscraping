@@ -97,38 +97,32 @@ All news crawlers accept standard argparse parameter structures for dynamic over
 - **Interactive CLI Core**: [src/indoscraping/cli.py](file:///home/al/Projects/indoscraping/src/indoscraping/cli.py)
 - **News Scrapers**: [src/indoscraping/scraper/news/](file:///home/al/Projects/indoscraping/src/indoscraping/scraper/news/)
   - `kompas.py` — Beautifulsoup4 crawler, parses indices.
-  - `detik.py` — Handles general indices.
-  - `cnbc.py` — High-performance crawler using `ThreadPoolExecutor` (formerly `cnbcindonesia.py`).
-  - `cnn.py` — Standard BS4 parser (formerly `cnnindonesia.py`).
-  - `bisnis.py` — Extracts business indices.
+  - `detik.py` — Handles general indices using BeautifulSoup and `indoscraping_core`.
+  - `cnbc.py` — High-performance crawler using `ThreadPoolExecutor` and pendulum.
+  - `cnn.py` — Standard BS4 parser for CNN Indonesia indices.
+  - `bisnis.py` — High-resilience crawler using `curl_cffi` to mimic Google Chrome handshakes and bypass WAF anti-bot protections.
   - `narasi.py` — High-performance API scraper using `curl_cffi` to mimic Google Chrome handshakes.
-- **E-Commerce Scrapers**: [src/indoscraping/scraper/ecommerce/](file:///home/al/Projects/indoscraping/src/indoscraping/scraper/ecommerce/)
-  - `alfagift.py` — Impersonated API scraper via `curl_cffi` with resilience checkpointing.
-  - `indomaret.py` — Impersonated API scraper via `curl_cffi` with resilience checkpointing.
-  - `blibli_search.py` — Playwright search results crawler with retry logic.
-  - `blibli_holistic.py` — Python category discovery and product scraper.
-  - `tokopedia.py` — Selenium/Undetected Chromedriver category crawler.
+- **E-Commerce Scrapers (UV Workspace Packages)**:
+  - `packages/alfagift-scraper/` (`alfagift-scraper`) — Impersonated API scraper via `curl_cffi` with resilience checkpointing.
+  - `packages/indomaret-scraper/` (`indomaret-scraper`) — Impersonated Spring Boot pageable API scraper via `curl_cffi` with nutrition parsing support.
+  - `packages/blibli-scraper/` (`blibli-scraper`) — Playwright search results crawler with system Chrome channel and retry logic.
+  - `packages/tokopedia-scraper/` (`tokopedia-scraper`) — Playwright response stream interception scraper for live search and GraphQL products.
+  - `packages/indoscraping-core/` (`indoscraping_core`) — Common data quality, schema drift detection, logging, and lineage sidecar engine.
 - **Property Scrapers**: [src/indoscraping/scraper/property/](file:///home/al/Projects/indoscraping/src/indoscraping/scraper/property/)
   - `rumah123.py` — High-performance property scraper extracting listings (houses, apartments, lands) for sale and rent with prices, specs, locations, and agents via Rumah123 using Chrome TLS impersonation.
-  - `jendela360.py` — High-performance property scraper extracting listings (apartments, houses, lands, offices), complexes, and unit specs via Jendela360 API and Next.js SSR.
+  - `jendela360.py` — High-performance property scraper extracting listings (apartments, houses, lands, offices), complexes, and unit specs via Jendela360 API and Next.js SSR (supports `--limit-articles` for CLI parity).
   - `sewakost.py` — Direct-from-owner affordable boarding house (kost) scraper with direct WhatsApp/phone numbers, facilities, and pricing.
+- **Go Engine Alternative**: [cmd/indoscraping/main.go](file:///home/al/Projects/indoscraping/cmd/indoscraping/main.go) and [pkg/](file:///home/al/Projects/indoscraping/pkg/)
 
 ---
 
-## 6. Repository Topology & Downstream Mirrors
+## 6. Repository Topology & Workspace Architecture
 
-This repository is structured as a **monorepo**. While we develop, test, and aggregate data centrally in this repository, we automatically mirror individual scraper categories to standalone, read-only repositories for public discoverability:
-- [indoscraping-news](https://github.com/nichsedge/indoscraping-news)
-- [indoscraping-ecommerce](https://github.com/nichsedge/indoscraping-ecommerce)
-- [indoscraping-finance](https://github.com/nichsedge/indoscraping-finance)
-
-### Mirror Workflow
-Whenever changes are pushed to the `main` branch, a GitHub Actions workflow (`.github/workflows/mirror.yml`) runs the custom script `scripts/mirror.py`. This script:
-1. Recreates standalone structures under `src/indoscraping/scraper/<category>`.
-2. Packages the shared code in `src/indoscraping/core` into the mirror.
-3. Automatically generates minimal, target-specific `pyproject.toml` and `README.md` configurations.
-4. Force-pushes the resulting commits to the downstream target repositories.
+This repository is organized as a unified **`uv` monorepo workspace**:
+- Central orchestration CLI and monolithic news/property scrapers live in `src/indoscraping/`.
+- Modular e-commerce and core libraries live in isolated `packages/*` workspaces with their own standalone entrypoints and dependencies.
+- Shared data contracts, data quality checks, schema drift monitoring, and lineage recording are maintained centrally in `packages/indoscraping-core`.
 
 ### Developer/Agent Contribution Rule
 > [!IMPORTANT]
-> **Always make contributions, bug fixes, and feature requests directly in this central `indoscraping` monorepo.** Do not submit PRs directly to the read-only mirrors, as they will be overwritten on the next automated mirror sync.
+> **Always make contributions, bug fixes, and feature requests directly in this central `indoscraping` repository.** Ensure that when running Playwright scrapers, system-installed Chrome is utilized (`channel='chrome'`, `PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1`).

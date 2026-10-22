@@ -81,6 +81,7 @@ uv run indoscraping inspect narasi
 # Run a news scraper with options
 uv run indoscraping run cnbc
 uv run indoscraping run detik --limit-articles 5
+uv run indoscraping run bisnis --limit-articles 2
 uv run indoscraping run narasi --limit-articles 3 --date 2026-05-18
 
 # Run e-commerce API scrapers

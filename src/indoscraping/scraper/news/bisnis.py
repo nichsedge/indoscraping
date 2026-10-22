@@ -1,4 +1,4 @@
-import requests
+from curl_cffi import requests
 from bs4 import BeautifulSoup
 from datetime import datetime
 import json
@@ -7,10 +7,15 @@ import re
 from indoscraping_core import write_latest_and_history, collect_lineage
 
 BASE_URL = "https://www.bisnis.com"
-HEADERS = {'User-Agent': 'Mozilla/5.0'}
+HEADERS = {
+    'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36',
+    'Referer': 'https://www.bisnis.com/',
+    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+    'Accept-Language': 'id,en-US;q=0.9,en;q=0.8',
+}
 
 def get_categories():
-    res = requests.get(f"{BASE_URL}/index", headers=HEADERS)
+    res = requests.get(f"{BASE_URL}/index", headers=HEADERS, impersonate="chrome", timeout=15)
     soup = BeautifulSoup(res.text, "html.parser")
     categories = {}
     for label in soup.select("label.indeks-radio"):
@@ -20,7 +25,7 @@ def get_categories():
     return categories
 
 def get_max_page(category_id, date_str):
-    res = requests.get(f"{BASE_URL}/index?categoryId={category_id}&type=indeks&date={date_str}", headers=HEADERS)
+    res = requests.get(f"{BASE_URL}/index?categoryId={category_id}&type=indeks&date={date_str}", headers=HEADERS, impersonate="chrome", timeout=15)
     soup = BeautifulSoup(res.text, "html.parser")
     total_page = soup.select_one("#total_page")
     return int(total_page['value']) if total_page else 1
@@ -30,7 +35,8 @@ def get_article_links(category_id, date_str):
     links = set()
     for page in range(1, max_page + 1):
         url = f"{BASE_URL}/index?categoryId={category_id}&type=indeks&date={date_str}&page={page}"
-        soup = BeautifulSoup(requests.get(url, headers=HEADERS).text, "html.parser")
+        res = requests.get(url, headers=HEADERS, impersonate="chrome", timeout=15)
+        soup = BeautifulSoup(res.text, "html.parser")
         for a in soup.select("a.artLink"):
             href = a.get("href", "")
             if href.startswith("http"):
@@ -39,7 +45,7 @@ def get_article_links(category_id, date_str):
 
 def scrape_article(url):
     try:
-        res = requests.get(url, headers=HEADERS)
+        res = requests.get(url, headers=HEADERS, impersonate="chrome", timeout=15)
         res.raise_for_status()
         soup = BeautifulSoup(res.content, 'html.parser')
 

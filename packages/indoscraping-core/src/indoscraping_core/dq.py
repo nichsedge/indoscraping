@@ -101,18 +101,21 @@ def validate_and_clean_ecommerce(items: List[Dict[str, Any]], *, strict: bool = 
                 raise DataQualityError("Product item missing valid productName/title")
             continue
 
-        raw_price = item.get("priceRaw") or str(item.get("priceNumeric") or 0)
-        num_price = item.get("priceNumeric")
-        if num_price is None or num_price == 0:
-            num_price = parse_numeric_price(raw_price)
+        price_val = item.get("priceNumeric") or item.get("finalPrice") or item.get("price") or item.get("min_price")
+        raw_price = item.get("priceRaw") or item.get("price_raw") or (str(price_val) if price_val is not None else "0")
+        num_price = price_val if isinstance(price_val, (int, float)) and price_val > 0 else parse_numeric_price(raw_price)
+
+        prod_url = item.get("productUrl") or item.get("url") or item.get("link")
+        if not prod_url and item.get("permalink"):
+            prod_url = f"https://www.klikindomaret.com/product/{item['permalink']}"
 
         cleaned_item = {
             "productName": name,
-            "priceRaw": f"Rp {num_price:,}".replace(",", ".") if num_price > 0 else clean_text(str(raw_price)),
+            "priceRaw": f"Rp {int(num_price):,}".replace(",", ".") if num_price > 0 else clean_text(str(raw_price)),
             "priceNumeric": int(num_price),
             "category": clean_text(item.get("category")),
-            "seller": clean_text(item.get("seller") or "Unknown"),
-            "productUrl": clean_text(item.get("productUrl") or item.get("url")),
+            "seller": clean_text(item.get("seller") or item.get("brandName") or "Unknown"),
+            "productUrl": clean_text(prod_url),
         }
         
         # Preserve extra metadata keys

@@ -62,6 +62,22 @@ def test_validate_and_clean_ecommerce():
     assert cleaned[0]["priceRaw"] == "Rp 2.500.000"
     assert cleaned[0]["seller"] == "Official Store"
 
+    # Test KlikIndomaret-style item with finalPrice, permalink, brandName
+    indomaret_item = [
+        {
+            "productName": "Listerine Mouthwash",
+            "price": 43000,
+            "finalPrice": 21500,
+            "permalink": "mouthwash-123",
+            "brandName": "Listerine"
+        }
+    ]
+    indomaret_cleaned = validate_and_clean_ecommerce(indomaret_item)
+    assert indomaret_cleaned[0]["priceNumeric"] == 21500
+    assert indomaret_cleaned[0]["priceRaw"] == "Rp 21.500"
+    assert indomaret_cleaned[0]["seller"] == "Listerine"
+    assert "mouthwash-123" in indomaret_cleaned[0]["productUrl"]
+
 
 def test_schema_drift_detection_ok():
     valid_data = [

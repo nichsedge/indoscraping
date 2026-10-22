@@ -11,7 +11,11 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 import httpx
-from rapidocr_onnxruntime import RapidOCR
+
+try:
+    from rapidocr_onnxruntime import RapidOCR
+except ImportError:
+    RapidOCR = None  # type: ignore
 
 
 NUTRI_PATTERNS = {
@@ -219,6 +223,9 @@ def main() -> None:
     products = load_products(in_path)
     if args.max_products and args.max_products > 0:
         products = products[: args.max_products]
+
+    if RapidOCR is None:
+        raise SystemExit("Error: 'rapidocr-onnxruntime' is not installed. Please install with: uv sync --extra ocr")
 
     ocr = RapidOCR()
 

@@ -98,10 +98,11 @@ SCRAPERS: Dict[str, Dict[str, Any]] = {
     "tokped": {
         "name": "Tokopedia Holistic Scraper",
         "category": "E-Commerce",
-        "lang": "Python (Selenium)",
+        "lang": "Python (Playwright)",
         "cmd": ["tokopedia-scraper"],
-        "desc": "Scrapes Tokopedia category tree and product details using Undetected ChromeDriver.",
-        "output_path": "data/ecommerce/tokopedia/latest.json"
+        "desc": "Scrapes Tokopedia live products via Playwright Chrome response interception.",
+        "output_path": "data/ecommerce/tokopedia/latest.json",
+        "env": {"PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1"}
     },
     # Property Category
     "jendela360": {
@@ -514,10 +515,8 @@ def interactive_dashboard() -> None:
                         extra_args = []
                         if info["category"] == "News" or sid in ["alfagift", "indomaret"]:
                             extra_args.extend(["--limit-categories", "1", "--limit-articles", "2"])
-                        elif sid in ["detik", "narasi", "bisnis", "cnn", "kompas", "cnbc", "sewakost", "rumah123"]:
+                        elif sid in ["detik", "narasi", "bisnis", "cnn", "kompas", "cnbc", "sewakost", "rumah123", "jendela360"]:
                             extra_args.extend(["--limit-articles", "2"])
-                        elif sid == "jendela360":
-                            extra_args.extend(["--limit-pages", "1"])
                             
                         success = run_scraper_subprocess(sid, extra_args)
                         if success:
@@ -673,10 +672,8 @@ def main() -> None:
             if args.limit_categories and (info["category"] == "News" or sid in ["alfagift", "indomaret"]):
                 extra_args.extend(["--limit-categories", str(args.limit_categories)])
             if args.limit_articles:
-                if info["category"] == "News" or sid in ["detik", "narasi", "bisnis", "cnn", "kompas", "cnbc", "alfagift", "indomaret", "sewakost", "rumah123"]:
+                if info["category"] == "News" or sid in ["detik", "narasi", "bisnis", "cnn", "kompas", "cnbc", "alfagift", "indomaret", "sewakost", "rumah123", "jendela360"]:
                     extra_args.extend(["--limit-articles", str(args.limit_articles)])
-                elif sid == "jendela360":
-                    extra_args.extend(["--limit-pages", "1"])
             
             console.print(f"\n[bold yellow]>>> [{info['category']}] Executing {info['name']} ({sid})...[/bold yellow]")
             success = run_scraper_subprocess(sid, extra_args)

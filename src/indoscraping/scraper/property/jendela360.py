@@ -413,6 +413,12 @@ def main() -> None:
         help="Max pages per category/deal-type (default: 5; use 0 for unlimited / all pages)",
     )
     parser.add_argument(
+        "--limit-articles",
+        type=int,
+        default=None,
+        help="Max number of total items to extract (for CLI parity with other scrapers)",
+    )
+    parser.add_argument(
         "--enrich",
         action="store_true",
         help="Enrich listings with deep unit specs (floors, directions, deposit, fee details)",
@@ -451,7 +457,11 @@ def main() -> None:
 
     if args.mode == "apartments":
         limit = None if args.limit_pages == 0 else args.limit_pages * 12
+        if args.limit_articles:
+            limit = args.limit_articles
         results = scraper.scrape_apartment_complexes(limit=limit)
+        if args.limit_articles and results:
+            results = results[:args.limit_articles]
         out_path = Path(args.output_dir) / "apartments"
         save_results(results, out_path, args.date)
         return
@@ -468,6 +478,8 @@ def main() -> None:
         deal_types = [DEAL_TYPE_MAP[args.deal_type]]
 
     max_pages = None if args.limit_pages == 0 else args.limit_pages
+    if args.limit_articles:
+        max_pages = 1
 
     results = scraper.scrape_listings(
         listing_types=listing_types,
@@ -479,6 +491,9 @@ def main() -> None:
     if not results:
         logger.warning("No listings were extracted from Jendela360 (upstream API may be down or rate-limited).")
         return
+
+    if args.limit_articles and results:
+        results = results[:args.limit_articles]
 
     out_path = Path(args.output_dir)
     save_results(results, out_path, args.date)

@@ -101,12 +101,21 @@ def scrape_indomaret(date_str, output_path, limit_categories=None, limit_article
     for idx, config in enumerate(categories_to_crawl, 1):
         try:
             res = get_products(0, config["meta"], config["category"], config["sub"])
-            prods = res.get("products", [])
+            prods = res.get("content") or res.get("products", [])
+            for p in prods:
+                if not p.get("category"):
+                    p["category"] = config.get("sub") or config.get("category")
+                if not p.get("productUrl") and p.get("permalink"):
+                    p["productUrl"] = f"https://www.klikindomaret.com/product/{p['permalink']}"
             all_products.extend(prods)
             if limit_articles and len(all_products) >= limit_articles:
+                all_products = all_products[:limit_articles]
                 break
         except Exception as e:
             print(f"Error scraping category {config['category']}: {e}")
+
+    if limit_articles:
+        all_products = all_products[:limit_articles]
             
     all_products = validate_and_clean_ecommerce(all_products)
     detect_schema_drift(all_products, EcommerceProductModel, "indomaret", strict_raise=False)

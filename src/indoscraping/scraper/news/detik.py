@@ -8,9 +8,9 @@ import requests
 from bs4 import BeautifulSoup
 from fake_useragent import UserAgent
 
-from indoscraping.core.dq import ensure_list_of_dicts, ensure_required_keys, ensure_unique
-from indoscraping.core.lineage import collect_lineage
-from indoscraping.core.output import write_latest_and_history
+from indoscraping_core.dq import ensure_list_of_dicts, ensure_required_keys, ensure_unique
+from indoscraping_core.lineage import collect_lineage
+from indoscraping_core.output import write_latest_and_history
 
 # Configure logging with proper formatting and level
 logging.basicConfig(
@@ -278,7 +278,7 @@ def main():
         raise
 
     # Lineage sidecar meta (does not alter the primary JSON schema)
-    meta = collect_lineage(scraper_id="detik", repo_root=os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../../..")))
+    meta = collect_lineage(scraper_id="detik")
     meta.update({
         "date": date_str,
         "limit_articles": args.limit_articles,

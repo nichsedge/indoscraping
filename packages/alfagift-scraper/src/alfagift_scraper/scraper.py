@@ -78,6 +78,11 @@ def scrape_alfagift(date_str, output_path, limit_categories=None, limit_articles
                 time.sleep(0.3)
         except Exception as e:
             print(f"Error scraping category {category_id}: {e}")
+        if limit_articles and len(all_products) >= limit_articles:
+            break
+
+    if limit_articles:
+        all_products = all_products[:limit_articles]
             
     all_products = validate_and_clean_ecommerce(all_products)
     detect_schema_drift(all_products, EcommerceProductModel, "alfagift", strict_raise=False)

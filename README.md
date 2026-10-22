@@ -3,6 +3,7 @@
 <div align="center">
 
 [![Python Version](https://img.shields.io/badge/Python-3.12%2B-blue?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
+[![Go Version](https://img.shields.io/badge/Go-1.22%2B-00ADD8?style=for-the-badge&logo=go&logoColor=white)](README_GO.md)
 [![Env Manager](https://img.shields.io/badge/uv-astral-blueviolet?style=for-the-badge&logo=python&logoColor=white)](https://github.com/astral-sh/uv)
 [![License](https://img.shields.io/badge/License-ISC-orange?style=for-the-badge)](https://opensource.org/licenses/ISC)
 [![Code Style](https://img.shields.io/badge/code%20style-ruff-000000.svg?style=for-the-badge&logo=ruff)](https://github.com/astral-sh/ruff)
@@ -18,6 +19,7 @@
 
 ## 🚀 Key Features
 
+*   **Dual-Engine Architecture (Python + Go)**: Alongside the Python rich TUI dashboard, includes a native Go CLI (`bin/indoscraping`) with managed goroutine semaphore concurrency, Chrome CDP integration, and CSV export pipeline. See [README_GO.md](README_GO.md).
 *   **Unified Visual CLI Dashboard**: Discover, monitor, and run all scrapers from a single, interactive, colorized terminal screen built with `rich`.
 *   **Standardized Database Layout**: Systematic and clean data organization under `data/`, automatically splitting `latest.json` for rapid dashboard access and dated snapshots inside `history/YYYY-MM-DD.json` for historical delta tracking.
 *   **Highly Configurable News Crawlers**: Parameterized Python crawlers supporting dynamic target dates (`--date`), category limit overrides (`--limit-categories`), and item quotas (`--limit-articles`).

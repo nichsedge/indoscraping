@@ -13,3 +13,6 @@ wheels/
 node_modules
 
 data
+
+# Go compiled binaries
+bin/

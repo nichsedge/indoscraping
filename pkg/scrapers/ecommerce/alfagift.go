@@ -37,7 +37,7 @@ func ScrapeAlfagift(opts AlfagiftOptions) ([]Product, error) {
 		opts.Longitude = "106.8271528"
 	}
 
-	client := &http.Client{Timeout: 30 * time.Second}
+	client := core.HTTPClient()
 
 	setHeaders := func(req *http.Request) {
 		trxID := strconv.FormatInt(rand.Int63n(9999999999), 10)

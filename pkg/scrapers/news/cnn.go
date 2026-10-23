@@ -28,7 +28,7 @@ func ScrapeCNN(opts CNNOptions) ([]Article, error) {
 	}
 
 	targetURL := fmt.Sprintf("https://www.cnnindonesia.com/indeks?date=%s", opts.Date)
-	client := &http.Client{Timeout: 30 * time.Second}
+	client := core.HTTPClient()
 
 	req, err := http.NewRequest("GET", targetURL, nil)
 	if err != nil {

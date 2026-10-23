@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"regexp"
-	"strconv"
 	"strings"
 	"time"
+	"unicode"
+	"unicode/utf8"
 )
 
 // MetaSidecarPath returns the path for the sidecar metadata JSON file.
@@ -68,47 +68,135 @@ func WriteLatestAndHistory(latestPath string, historyPath string, payload interf
 	return nil
 }
 
-var (
-	htmlTagRegex = regexp.MustCompile(`<[^>]+>`)
-	spacesRegex  = regexp.MustCompile(`\s+`)
-	digitsRegex  = regexp.MustCompile(`[^\d]`)
-)
-
-// CleanText normalizes whitespace and removes tags.
+// CleanText normalizes whitespace and removes HTML tags with a single-pass scanner.
 func CleanText(text string) string {
-	cleaned := htmlTagRegex.ReplaceAllString(text, " ")
-	cleaned = strings.ReplaceAll(cleaned, "\u00a0", " ")
-	cleaned = strings.ReplaceAll(cleaned, "\n", " ")
-	cleaned = strings.ReplaceAll(cleaned, "\r", " ")
-	cleaned = strings.ReplaceAll(cleaned, "\t", " ")
-	cleaned = spacesRegex.ReplaceAllString(cleaned, " ")
-	return strings.TrimSpace(cleaned)
+	if text == "" {
+		return ""
+	}
+
+	var sb strings.Builder
+	sb.Grow(len(text))
+
+	inTag := false
+	prevSpace := true // Start true to automatically trim leading whitespace
+
+	i := 0
+	for i < len(text) {
+		r, size := utf8.DecodeRuneInString(text[i:])
+		i += size
+
+		if inTag {
+			if r == '>' {
+				inTag = false
+				if !prevSpace {
+					sb.WriteByte(' ')
+					prevSpace = true
+				}
+			}
+			continue
+		}
+
+		if r == '<' {
+			inTag = true
+			continue
+		}
+
+		// Normalize all unicode & ASCII whitespace
+		if r == ' ' || r == '\t' || r == '\n' || r == '\r' || r == '\u00a0' || unicode.IsSpace(r) {
+			if !prevSpace {
+				sb.WriteByte(' ')
+				prevSpace = true
+			}
+			continue
+		}
+
+		sb.WriteRune(r)
+		prevSpace = false
+	}
+
+	res := sb.String()
+	if len(res) > 0 && res[len(res)-1] == ' ' {
+		res = res[:len(res)-1]
+	}
+	return res
 }
 
-// ParseNumericPrice converts currency strings like "Rp 15.000" or "Rp15.000,00" into integer 15000.
+// ParseNumericPrice converts currency strings like "Rp 15.000", "Rp15.000,00", "Rp 1.250.000" into integer.
+// Correctly handles Indonesian decimal comma (cents/sen) and avoids regex overhead.
 func ParseNumericPrice(raw string) int {
-	digits := digitsRegex.ReplaceAllString(raw, "")
-	if digits == "" {
+	if raw == "" {
 		return 0
 	}
-	val, err := strconv.Atoi(digits)
-	if err != nil {
+
+	// Look for comma which in Indonesian currency signifies decimals/sen (e.g. ",00")
+	// If followed by digits at the end, truncate the decimal portion.
+	clean := raw
+	if commaIdx := strings.LastIndexByte(clean, ','); commaIdx != -1 {
+		// If comma is followed by 1 or 2 digits at the end (cents), ignore the fractional part
+		afterComma := strings.TrimRight(clean[commaIdx+1:], " \t\r\n-")
+		if len(afterComma) <= 2 {
+			isDigits := true
+			for _, c := range afterComma {
+				if c < '0' || c > '9' {
+					isDigits = false
+					break
+				}
+			}
+			if isDigits {
+				clean = clean[:commaIdx]
+			}
+		}
+	}
+
+	val := 0
+	foundDigit := false
+	for i := 0; i < len(clean); i++ {
+		b := clean[i]
+		if b >= '0' && b <= '9' {
+			val = val*10 + int(b-'0')
+			foundDigit = true
+		}
+	}
+
+	if !foundDigit {
 		return 0
 	}
 	return val
 }
 
 // FormatIDR formats an integer to Indonesian Rupiah thousands dot format (e.g. 2630000 -> "2.630.000").
+// Uses stack-allocated byte buffer to avoid heap allocations.
 func FormatIDR(n int) string {
-	in := strconv.Itoa(n)
-	var out []byte
-	l := len(in)
-	for i, c := range in {
-		if i > 0 && (l-i)%3 == 0 {
-			out = append(out, '.')
-		}
-		out = append(out, byte(c))
+	if n == 0 {
+		return "0"
 	}
-	return string(out)
+
+	sign := false
+	if n < 0 {
+		sign = true
+		n = -n
+	}
+
+	var buf [32]byte
+	pos := len(buf)
+	count := 0
+
+	for n > 0 {
+		if count > 0 && count%3 == 0 {
+			pos--
+			buf[pos] = '.'
+		}
+		pos--
+		buf[pos] = byte('0' + (n % 10))
+		count++
+		n /= 10
+	}
+
+	if sign {
+		pos--
+		buf[pos] = '-'
+	}
+
+	return string(buf[pos:])
 }
 

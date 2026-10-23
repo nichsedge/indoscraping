@@ -51,7 +51,10 @@ func ScrapeBlibli(opts BlibliOptions) ([]Product, error) {
 	req.Header.Set("sec-fetch-mode", "cors")
 	req.Header.Set("sec-fetch-site", "same-origin")
 
-	client := &http.Client{Timeout: time.Duration(opts.TimeoutSec) * time.Second}
+	client := &http.Client{
+		Transport: core.DefaultTransport,
+		Timeout:   time.Duration(opts.TimeoutSec) * time.Second,
+	}
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch Blibli search API: %w", err)

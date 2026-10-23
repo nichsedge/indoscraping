@@ -38,7 +38,7 @@ func ScrapeJendela360(opts Jendela360Options) ([]PropertyListing, error) {
 		opts.OutputPath = "data/property/jendela360/latest.json"
 	}
 
-	client := &http.Client{Timeout: 30 * time.Second}
+	client := core.HTTPClient()
 	var allListings []PropertyListing
 	scrapedAt := time.Now().UTC().Format(time.RFC3339)
 

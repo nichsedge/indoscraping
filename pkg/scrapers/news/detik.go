@@ -36,7 +36,7 @@ func ScrapeDetik(opts DetikOptions) ([]Article, error) {
 		opts.OutputPath = "data/news/detik/latest.json"
 	}
 
-	client := &http.Client{Timeout: 30 * time.Second}
+	client := core.HTTPClient()
 	startURL := fmt.Sprintf("https://news.detik.com/indeks?date=%s", opts.Date)
 
 	req, err := http.NewRequest("GET", startURL, nil)

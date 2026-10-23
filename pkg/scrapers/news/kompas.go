@@ -28,7 +28,7 @@ func ScrapeKompas(opts KompasOptions) ([]Article, error) {
 	}
 
 	targetURL := fmt.Sprintf("https://indeks.kompas.com/?site=news&date=%s", opts.Date)
-	client := &http.Client{Timeout: 30 * time.Second}
+	client := core.HTTPClient()
 
 	req, err := http.NewRequest("GET", targetURL, nil)
 	if err != nil {

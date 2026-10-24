@@ -73,7 +73,7 @@ SCRAPERS: Dict[str, Dict[str, Any]] = {
     "alfagift": {
         "name": "Alfagift Scraper",
         "category": "E-Commerce",
-        "lang": "Python",
+        "lang": "Python, Go",
         "cmd": ["alfagift-scraper"],
         "desc": "Scrapes categories and products from the Alfamart Alfagift app.",
         "output_path": "data/ecommerce/alfagift/latest.json"
@@ -81,26 +81,45 @@ SCRAPERS: Dict[str, Dict[str, Any]] = {
     "indomaret": {
         "name": "Klik Indomaret Scraper",
         "category": "E-Commerce",
-        "lang": "Python",
+        "lang": "Python, Go",
         "cmd": ["indomaret-scraper"],
         "desc": "Scrapes products and catalog details from KlikIndomaret.",
         "output_path": "data/ecommerce/indomaret/latest.json"
     },
+    "blibli": {
+        "name": "Blibli Search Scraper",
+        "category": "E-Commerce",
+        "lang": "Python (Playwright), Go",
+        "cmd": ["blibli-scraper"],
+        "desc": "Scrapes search results from Blibli using Playwright or Go mobile gateway.",
+        "output_path": "data/ecommerce/blibli/latest.json",
+        "env": {"PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1"}
+    },
+    "tokopedia": {
+        "name": "Tokopedia Holistic Scraper",
+        "category": "E-Commerce",
+        "lang": "Python (Playwright), Go",
+        "cmd": ["tokopedia-scraper"],
+        "desc": "Scrapes Tokopedia live products via Playwright Chrome response interception or Go SSR parser.",
+        "output_path": "data/ecommerce/tokopedia/latest.json",
+        "env": {"PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1"}
+    },
+    # Backward compatibility aliases
     "blibli-search": {
         "name": "Blibli Search Scraper",
         "category": "E-Commerce",
-        "lang": "Python (Playwright)",
+        "lang": "Python (Playwright), Go",
         "cmd": ["blibli-scraper"],
-        "desc": "Scrapes search results from Blibli using Playwright.",
+        "desc": "Scrapes search results from Blibli using Playwright or Go mobile gateway.",
         "output_path": "data/ecommerce/blibli/latest.json",
         "env": {"PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1"}
     },
     "tokped": {
         "name": "Tokopedia Holistic Scraper",
         "category": "E-Commerce",
-        "lang": "Python (Playwright)",
+        "lang": "Python (Playwright), Go",
         "cmd": ["tokopedia-scraper"],
-        "desc": "Scrapes Tokopedia live products via Playwright Chrome response interception.",
+        "desc": "Scrapes Tokopedia live products via Playwright Chrome response interception or Go SSR parser.",
         "output_path": "data/ecommerce/tokopedia/latest.json",
         "env": {"PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1"}
     },
@@ -108,7 +127,7 @@ SCRAPERS: Dict[str, Dict[str, Any]] = {
     "jendela360": {
         "name": "Jendela360 Property Scraper",
         "category": "Property",
-        "lang": "Python",
+        "lang": "Python, Go",
         "cmd": ["python", "src/indoscraping/scraper/property/jendela360.py"],
         "desc": "Scrapes apartments, houses, lands, and offices via Jendela360 API & SSR.",
         "output_path": "data/property/jendela360/latest.json"
@@ -116,7 +135,7 @@ SCRAPERS: Dict[str, Dict[str, Any]] = {
     "sewakost": {
         "name": "SewaKost.com Boarding House Scraper",
         "category": "Property",
-        "lang": "Python",
+        "lang": "Python, Go",
         "cmd": ["python", "src/indoscraping/scraper/property/sewakost.py"],
         "desc": "Scrapes affordable kost listings, direct owner WhatsApp/phone contacts, and facilities.",
         "output_path": "data/property/sewakost/latest.json"
@@ -129,6 +148,26 @@ SCRAPERS: Dict[str, Dict[str, Any]] = {
         "desc": "Scrapes property listings (houses, apartments, lands) for sale & rent via Rumah123.",
         "output_path": "data/property/rumah123/latest.json"
     }
+}
+
+# Alias resolution mapping
+SCRAPER_ALIASES: Dict[str, str] = {
+    "tokped": "tokopedia",
+    "blibli-search": "blibli",
+}
+
+# Canonical primary scraper IDs for displays and deduplication
+CANONICAL_SCRAPERS: List[str] = [
+    "detik", "bisnis", "cnbc", "cnn", "kompas", "narasi",
+    "alfagift", "indomaret", "blibli", "tokopedia",
+    "jendela360", "sewakost", "rumah123"
+]
+
+# Scrapers implemented in the high-performance Go native engine
+GO_SCRAPERS = {
+    "detik", "cnbc", "cnn", "kompas",
+    "alfagift", "blibli", "tokopedia", "indomaret",
+    "jendela360", "sewakost"
 }
 
 
@@ -153,7 +192,8 @@ def list_scrapers_table() -> Table:
     table.add_column("Tech Stack", style="bold blue", width=20)
     table.add_column("Status / Output File", style="dim white")
 
-    for sid, info in SCRAPERS.items():
+    for sid in CANONICAL_SCRAPERS:
+        info = SCRAPERS[sid]
         # Check if output file exists to show status
         out_path = info["output_path"]
         if os.path.exists(out_path):
@@ -182,12 +222,52 @@ def list_scrapers_table() -> Table:
     return table
 
 
-def run_scraper_subprocess(sid: str, extra_args: List[str] = None) -> bool:
-    if sid not in SCRAPERS:
+def run_scraper_subprocess(sid: str, extra_args: List[str] = None, engine: str = "py") -> bool:
+    canonical_sid = SCRAPER_ALIASES.get(sid, sid)
+    if canonical_sid not in SCRAPERS:
         console.print(f"[bold red]Error: Scraper '{sid}' not found![/bold red]")
         return False
 
-    info = SCRAPERS[sid]
+    info = SCRAPERS[canonical_sid]
+
+    # Handle execution via Go engine if requested
+    if engine == "go":
+        if canonical_sid not in GO_SCRAPERS:
+            console.print(f"[bold yellow]Note: Scraper '{canonical_sid}' is not implemented in Go. Executing with Python engine.[/bold yellow]")
+        else:
+            go_bin = os.path.abspath("bin/indoscraping")
+            if not os.path.exists(go_bin):
+                console.print("[bold yellow]Go binary not found. Compiling bin/indoscraping...[/bold yellow]")
+                build_proc = subprocess.run(["go", "build", "-o", "bin/indoscraping", "./cmd/indoscraping"])
+                if build_proc.returncode != 0:
+                    console.print("[bold red]Failed to compile Go engine. Falling back to Python.[/bold red]")
+                else:
+                    go_cmd = [go_bin, "run", canonical_sid]
+                    if extra_args:
+                        go_cmd.extend(extra_args)
+                    console.print(Panel(
+                        f"[bold green]Starting Scraper (Go Native Engine):[/bold green] {info['name']}\n"
+                        f"[bold blue]Command:[/bold blue] {' '.join(go_cmd)}\n"
+                        f"[bold yellow]Description:[/bold yellow] {info['desc']}",
+                        border_style="green",
+                        title="Execution Details"
+                    ))
+                    res = subprocess.run(go_cmd)
+                    return res.returncode == 0
+            else:
+                go_cmd = [go_bin, "run", canonical_sid]
+                if extra_args:
+                    go_cmd.extend(extra_args)
+                console.print(Panel(
+                    f"[bold green]Starting Scraper (Go Native Engine):[/bold green] {info['name']}\n"
+                    f"[bold blue]Command:[/bold blue] {' '.join(go_cmd)}\n"
+                    f"[bold yellow]Description:[/bold yellow] {info['desc']}",
+                    border_style="green",
+                    title="Execution Details"
+                ))
+                res = subprocess.run(go_cmd)
+                return res.returncode == 0
+
     cmd = list(info["cmd"])
     if cmd[0] == "python":
         cmd[0] = sys.executable
@@ -196,7 +276,7 @@ def run_scraper_subprocess(sid: str, extra_args: List[str] = None) -> bool:
         cmd.extend(extra_args)
 
     console.print(Panel(
-        f"[bold green]Starting Scraper:[/bold green] {info['name']}\n"
+        f"[bold green]Starting Scraper (Python Engine):[/bold green] {info['name']}\n"
         f"[bold blue]Command:[/bold blue] {' '.join(cmd)}\n"
         f"[bold yellow]Description:[/bold yellow] {info['desc']}",
         border_style="green",
@@ -279,7 +359,8 @@ def view_output_statistics() -> None:
     total_size = 0
     total_files = 0
 
-    for sid, info in SCRAPERS.items():
+    for sid in CANONICAL_SCRAPERS:
+        info = SCRAPERS[sid]
         out_path = info["output_path"]
         if os.path.exists(out_path):
             size = os.path.getsize(out_path)
@@ -602,6 +683,50 @@ def interactive_dashboard() -> None:
             time.sleep(1)
 
 
+def check_browser_env() -> None:
+    """Checks and reports system Chromium, Playwright environment, and display settings."""
+    import shutil
+    from indoscraping_core.dq import get_installed_chrome_version
+
+    console.print(Panel("[bold cyan]System Browser & Playwright Environment Check[/bold cyan]", border_style="cyan"))
+
+    chrome_bin = shutil.which("google-chrome") or shutil.which("chromium") or shutil.which("chrome")
+    chrome_ver = get_installed_chrome_version()
+
+    table = Table(border_style="cyan", show_header=True, header_style="bold magenta")
+    table.add_column("Property", style="bold white", width=30)
+    table.add_column("Detected Value", style="bold green", width=35)
+    table.add_column("Assessment", style="bold yellow")
+
+    table.add_row(
+        "System Chrome Binary",
+        chrome_bin or "Not Found",
+        "[green]Found[/green]" if chrome_bin else "[red]Missing (install chromium/chrome)[/red]"
+    )
+    table.add_row(
+        "Chrome Major Version",
+        str(chrome_ver) if chrome_ver else "Unknown",
+        "[green]Supported[/green]" if chrome_ver else "[yellow]Warning[/yellow]"
+    )
+    table.add_row(
+        "DISPLAY (X11 / Wayland)",
+        os.environ.get("DISPLAY", "Unset"),
+        "[green]Active (Headed GUI capable)[/green]" if "DISPLAY" in os.environ else "[dim]Headless Only[/dim]"
+    )
+    table.add_row(
+        "WAYLAND_DISPLAY",
+        os.environ.get("WAYLAND_DISPLAY", "Unset"),
+        "[green]Active[/green]" if "WAYLAND_DISPLAY" in os.environ else "[dim]Unset[/dim]"
+    )
+    table.add_row(
+        "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD",
+        os.environ.get("PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD", "0"),
+        "[green]Bypassing downloads[/green]" if os.environ.get("PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD") == "1" else "[dim]Default[/dim]"
+    )
+
+    console.print(table)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Indoscraping Scraper Suite CLI Dashboard")
     subparsers = parser.add_subparsers(dest="command", help="Subcommands")
@@ -612,6 +737,7 @@ def main() -> None:
     # Run command
     run_parser = subparsers.add_parser("run", help="Run a specific scraper")
     run_parser.add_argument("scraper_id", choices=list(SCRAPERS.keys()), help="ID of the scraper to run")
+    run_parser.add_argument("--engine", choices=["py", "go"], default="py", help="Execution engine: 'py' (default) or 'go'")
     run_parser.add_argument("scraper_args", nargs=argparse.REMAINDER, help="Additional optional arguments for the scraper script")
 
     # Inspect command
@@ -628,11 +754,19 @@ def main() -> None:
     run_all_parser = subparsers.add_parser("run-all", help="Run all scrapers sequentially")
     categories = sorted(list({v["category"].lower() for v in SCRAPERS.values()}))
     run_all_parser.add_argument("--category", choices=categories, type=str.lower, help="Filter scrapers by category")
+    run_all_parser.add_argument("--engine", choices=["py", "go"], default="py", help="Execution engine: 'py' (default) or 'go'")
     run_all_parser.add_argument("--limit-categories", type=int, help="Override --limit-categories argument for news scrapers")
     run_all_parser.add_argument("--limit-articles", type=int, help="Override --limit-articles argument for news/ecommerce/property scrapers")
 
     # Status command
     subparsers.add_parser("status", help="Show scraped output files and data metrics")
+
+    # Check-browser command
+    subparsers.add_parser("check-browser", help="Detect system Chromium/Chrome and verify browser environment")
+
+    # OCR nutrition command
+    ocr_parser = subparsers.add_parser("ocr-nutrition", help="Extract nutrition facts from product images via RapidOCR")
+    ocr_parser.add_argument("ocr_args", nargs=argparse.REMAINDER, help="Arguments passed to Indomaret nutrition OCR tool")
 
     args = parser.parse_args()
 
@@ -640,17 +774,31 @@ def main() -> None:
         table = list_scrapers_table()
         console.print(table)
     elif args.command == "run":
-        success = run_scraper_subprocess(args.scraper_id, args.scraper_args)
+        engine = args.engine
+        scraper_args = list(args.scraper_args)
+        if "--engine" in scraper_args:
+            idx = scraper_args.index("--engine")
+            if idx + 1 < len(scraper_args):
+                engine = scraper_args[idx + 1]
+                scraper_args = scraper_args[:idx] + scraper_args[idx + 2:]
+        success = run_scraper_subprocess(args.scraper_id, scraper_args, engine=engine)
         sys.exit(0 if success else 1)
     elif args.command == "inspect":
         inspect_scraper_data(args.scraper_id)
     elif args.command == "export":
         success = export_scraper_data(args.scraper_id, export_format=args.format, output_path=args.output)
         sys.exit(0 if success else 1)
+    elif args.command == "check-browser":
+        check_browser_env()
+    elif args.command == "ocr-nutrition":
+        from indoscraping.tools.indomaret_nutrition import main as ocr_main
+        sys.argv = ["indoscraping ocr-nutrition"] + args.ocr_args
+        ocr_main()
     elif args.command == "run-all":
-        # Identify scrapers to run
+        # Identify canonical scrapers to run
         scrapers_to_run = []
-        for sid, info in SCRAPERS.items():
+        for sid in CANONICAL_SCRAPERS:
+            info = SCRAPERS[sid]
             if args.category and info["category"].lower() != args.category.lower():
                 continue
             scrapers_to_run.append((sid, info))
@@ -660,7 +808,7 @@ def main() -> None:
             sys.exit(1)
 
         console.print(Panel(
-            f"[bold cyan]Running {len(scrapers_to_run)} scrapers sequentially...[/bold cyan]",
+            f"[bold cyan]Running {len(scrapers_to_run)} scrapers sequentially using engine='{args.engine}'...[/bold cyan]",
             border_style="cyan"
         ))
 
@@ -676,7 +824,7 @@ def main() -> None:
                     extra_args.extend(["--limit-articles", str(args.limit_articles)])
             
             console.print(f"\n[bold yellow]>>> [{info['category']}] Executing {info['name']} ({sid})...[/bold yellow]")
-            success = run_scraper_subprocess(sid, extra_args)
+            success = run_scraper_subprocess(sid, extra_args, engine=args.engine)
             if success:
                 success_count += 1
             else:

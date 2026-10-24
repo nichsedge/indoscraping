@@ -1,66 +1,111 @@
 # Indoscraping — Developer & Agent Guide
 
-Welcome to the modernized **Indoscraping** developer manual. This document guides developers and autonomous agents on how to execute, maintain, and expand the scraper suite.
+Welcome to the modernized **Indoscraping** developer manual. This document guides developers and autonomous agents on how to execute, maintain, test, and expand the dual-engine scraper suite.
 
 ---
 
-## 1. Unified Scraper CLI Dashboard (`indoscraping`)
+## 1. Dual-Engine Architecture (Python + Go)
 
-We have introduced a powerful, visual command-line interface dashboard built with `rich` that unifies all Python scrapers.
+Indoscraping features a unified, polyglot architecture designed for both interactive desktop development and high-performance server/mobile execution:
 
-### Running the Dashboard
-To launch the interactive visual terminal menu:
+| Engine | Primary Role | Tech Stack | Entry Point |
+| :--- | :--- | :--- | :--- |
+| **Python Engine** | Interactive Rich TUI, Playwright stream interception, modular packages | Python 3.14+, `uv`, `curl_cffi`, Playwright, Rich, Pydantic | `uv run indoscraping` |
+| **Go Native Engine** | High-concurrency semaphore pool, native Termux (aarch64), zero-python servers | Go 1.22+, `net/http`, Goroutines, CDP | `bin/indoscraping` or `--engine go` |
+
+Both engines adhere to the **exact same standardized output contracts** (`latest.json`, `history/YYYY-MM-DD.json`, and `.meta.json` lineage sidecars) under the `data/` directory.
+
+---
+
+## 2. Unified CLI Dashboard & Execution
+
+The central CLI dashboard (`indoscraping`) is built with `rich` and can orchestrate both Python and Go executions.
+
+### Interactive Dashboard
 ```bash
-# Via uv
 uv run indoscraping
 ```
 
-### Direct CLI Commands (Automation / CRONs)
-You can invoke specific commands non-interactively for headless execution, scripting, or automated schedulers:
-
+### Direct CLI Commands (Headless / Automation / CRONs)
 ```bash
-# 1. List all available scrapers and their storage statuses
+# 1. List all available scrapers, categories, and dual-engine support
 uv run indoscraping list
 
 # 2. View data volume stats, file formats, and last-modified dates
 uv run indoscraping status
 
-# 3. Inspect Scraped Records Directly (Terminal Preview)
+# 3. Inspect scraped records directly in terminal
 uv run indoscraping inspect <scraper_id>
 
-# 4. Execute a specific scraper directly
+# 4. Check system Chromium/Chrome detection & Playwright environment
+uv run indoscraping check-browser
+
+# 5. Execute a specific scraper (Python engine by default)
 uv run indoscraping run <scraper_id> [optional_arguments]
 
-# 5. Batch execute multiple scrapers sequentially
-uv run indoscraping run-all [--category <category>] [--limit-categories <N>] [--limit-articles <M>]
+# 6. Execute a specific scraper using the Go native engine
+uv run indoscraping run <scraper_id> --engine go [optional_arguments]
 
-# 6. Export Scraped Datasets (Parquet / CSV)
+# 7. Batch execute scrapers sequentially
+uv run indoscraping run-all [--category <news|ecommerce|property>] [--engine py|go] [--limit-articles <N>]
+
+# 8. Export Scraped Datasets (Parquet or CSV)
 uv run indoscraping export <scraper_id> [--format parquet|csv] [--output <path>]
 
-# Examples:
+# 9. Extract nutrition facts from product images via RapidOCR
+uv run indoscraping ocr-nutrition --input <image_path_or_json> --output <result_path>
+```
+
+### Common Command Examples:
+```bash
+# News
 uv run indoscraping run cnbc --limit-categories 1 --limit-articles 3
-uv run indoscraping run sewakost --limit-articles 2
-uv run indoscraping inspect sewakost
-uv run indoscraping export rumah123 --format parquet
-uv run indoscraping run-all --category news
-uv run indoscraping run-all --category property
-uv run indoscraping run-all --limit-articles 1 --limit-categories 1
+uv run indoscraping run detik --limit-articles 5
+uv run indoscraping run bisnis --limit-articles 2
+uv run indoscraping run narasi --limit-articles 3
+
+# E-Commerce (canonical keys: tokopedia, blibli, alfagift, indomaret)
+uv run indoscraping run tokopedia --query "kopi"
+uv run indoscraping run blibli --query "susu"
+uv run indoscraping run alfagift --limit-categories 1 --limit-articles 5
+uv run indoscraping run indomaret --limit-categories 1 --limit-articles 5
+
+# Real Estate & Boarding Houses (Kost)
+uv run indoscraping run sewakost --area jakarta/jakarta-barat/palmerah --limit-pages 1
+uv run indoscraping run jendela360 --limit-pages 1
+uv run indoscraping run rumah123 --limit-articles 5 --deal-type jual --category rumah
+
+# Go Engine Direct Execution
+./bin/indoscraping run cnbc --limit-articles 5
+./bin/indoscraping run sewakost --limit-pages 1
+./bin/indoscraping run all --limit-items 3
+./bin/indoscraping export csv
 ```
 
 ---
 
-## 2. Environment & Tooling
+## 3. Environment & Tooling Standards
 
-- **Python Env Manager (`uv`)**: We use `uv` for lightning-fast environment and package management.
-  - Run `uv sync` to restore environments.
-  - Run `uv add <pkg>` to install new packages (e.g. `curl-cffi`, `rich`, `BeautifulSoup4`).
-- **Playwright Bypass**: For bank rates and Blibli search scrapers, ensure the environment variable `PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1` is passed to rely on system-installed Chromium.
+- **Python Env Manager (`uv`)**: We use `uv` exclusively.
+  - Strict syntax: NEVER write `uv run python <script.py>`. Always use direct execution: `uv run indoscraping` or `uv run pytest`.
+  - Restore dependencies: `uv sync`
+  - Add workspace dependency: `uv add <pkg>`
+- **Go Toolchain**:
+  - Compile native binary: `go build -o bin/indoscraping ./cmd/indoscraping` (or `make build-go`).
+  - Run Go tests: `go test ./...` (or `make test-go`).
+- **Make Shortcuts**:
+  - `make test`: Runs both Python (`pytest`) and Go test suites.
+  - `make build-go`: Compiles `bin/indoscraping`.
+  - `make check-browser`: Verifies browser environment.
+- **Playwright Bypass**:
+  - Always use system-installed Chrome: `channel='chrome'`, `headless=True`.
+  - Ensure `PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1` is set to skip runtime browser downloads.
 
 ---
 
-## 3. Standardized Output & History Layout
+## 4. Standardized Output & Data Topology
 
-Scraped files are systematically directed to the standardized `data/` folder directory. Each scraper outputs both a `latest.json` for rapid dashboard access and a chronologically dated snapshot for historical delta checks.
+Scraped data is systematically stored under the `data/` tree. Each scraper produces `latest.json` for rapid CLI dashboard access, chronological snapshots under `history/YYYY-MM-DD.json`, and `.meta.json` lineage sidecars:
 
 ```
 data/
@@ -73,7 +118,9 @@ data/
 │   └── narasi/latest.json & history/YYYY-MM-DD.json
 ├── ecommerce/
 │   ├── alfagift/latest.json & history/YYYY-MM-DD.json
-│   └── indomaret/latest.json & history/YYYY-MM-DD.json
+│   ├── indomaret/latest.json & history/YYYY-MM-DD.json
+│   ├── blibli/latest.json & history/YYYY-MM-DD.json
+│   └── tokopedia/latest.json & history/YYYY-MM-DD.json
 └── property/
     ├── jendela360/latest.json & history/YYYY-MM-DD.json
     ├── rumah123/latest.json & history/YYYY-MM-DD.json
@@ -82,47 +129,59 @@ data/
 
 ---
 
-## 4. News Scrapers Parameters Signature
+## 5. Complete Scraper Catalog & Code Map
 
-All news crawlers accept standard argparse parameter structures for dynamic overrides:
-- `--date`: The crawl date to extract. Automatically defaults to today's date (or yesterday's date depending on scraper target timezone).
-- `--limit-categories`: Limits number of category sectors crawled (default: 1).
-- `--limit-articles`: Limits items scraped per category (perfect for rapid smoke testing).
-- `--output`: Redirects the final output destination.
+### Canonical Scraper IDs & Supported Engines
 
----
-
-## 5. Directory & Scraper Code Map
-
-- **Interactive CLI Core**: [src/indoscraping/cli.py](file:///home/al/Projects/indoscraping/src/indoscraping/cli.py)
-- **News Scrapers**: [src/indoscraping/scraper/news/](file:///home/al/Projects/indoscraping/src/indoscraping/scraper/news/)
-  - `kompas.py` — Beautifulsoup4 crawler, parses indices.
-  - `detik.py` — Handles general indices using BeautifulSoup and `indoscraping_core`.
-  - `cnbc.py` — High-performance crawler using `ThreadPoolExecutor` and pendulum.
-  - `cnn.py` — Standard BS4 parser for CNN Indonesia indices.
-  - `bisnis.py` — High-resilience crawler using `curl_cffi` to mimic Google Chrome handshakes and bypass WAF anti-bot protections.
-  - `narasi.py` — High-performance API scraper using `curl_cffi` to mimic Google Chrome handshakes.
-- **E-Commerce Scrapers (UV Workspace Packages)**:
-  - `packages/alfagift-scraper/` (`alfagift-scraper`) — Impersonated API scraper via `curl_cffi` with resilience checkpointing.
-  - `packages/indomaret-scraper/` (`indomaret-scraper`) — Impersonated Spring Boot pageable API scraper via `curl_cffi` with nutrition parsing support.
-  - `packages/blibli-scraper/` (`blibli-scraper`) — Playwright search results crawler with system Chrome channel and retry logic.
-  - `packages/tokopedia-scraper/` (`tokopedia-scraper`) — Playwright response stream interception scraper for live search and GraphQL products.
-  - `packages/indoscraping-core/` (`indoscraping_core`) — Common data quality, schema drift detection, logging, and lineage sidecar engine.
-- **Property Scrapers**: [src/indoscraping/scraper/property/](file:///home/al/Projects/indoscraping/src/indoscraping/scraper/property/)
-  - `rumah123.py` — High-performance property scraper extracting listings (houses, apartments, lands) for sale and rent with prices, specs, locations, and agents via Rumah123 using Chrome TLS impersonation.
-  - `jendela360.py` — High-performance property scraper extracting listings (apartments, houses, lands, offices), complexes, and unit specs via Jendela360 API and Next.js SSR (supports `--limit-articles` for CLI parity).
-  - `sewakost.py` — Direct-from-owner affordable boarding house (kost) scraper with direct WhatsApp/phone numbers, facilities, and pricing.
-- **Go Engine Alternative**: [cmd/indoscraping/main.go](file:///home/al/Projects/indoscraping/cmd/indoscraping/main.go) and [pkg/](file:///home/al/Projects/indoscraping/pkg/)
+| Canonical ID | Aliases | Scraper Name | Category | Python Engine | Go Engine |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| `detik` | — | Detik.com News | News | `src/indoscraping/scraper/news/detik.py` | `pkg/scrapers/news/detik.go` |
+| `bisnis` | — | Bisnis.com News | News | `src/indoscraping/scraper/news/bisnis.py` | — |
+| `cnbc` | — | CNBC Indonesia | News | `src/indoscraping/scraper/news/cnbc.py` | `pkg/scrapers/news/cnbc.go` |
+| `cnn` | — | CNN Indonesia | News | `src/indoscraping/scraper/news/cnn.py` | `pkg/scrapers/news/cnn.go` |
+| `kompas` | — | Kompas.com | News | `src/indoscraping/scraper/news/kompas.py` | `pkg/scrapers/news/kompas.go` |
+| `narasi` | — | Narasi.tv | News | `src/indoscraping/scraper/news/narasi.py` | — |
+| `alfagift` | — | Alfamart Alfagift | E-Commerce | `packages/alfagift-scraper/` | `pkg/scrapers/ecommerce/alfagift.go` |
+| `indomaret` | — | Klik Indomaret | E-Commerce | `packages/indomaret-scraper/` | `pkg/scrapers/ecommerce/indomaret.go` |
+| `blibli` | `blibli-search` | Blibli Products | E-Commerce | `packages/blibli-scraper/` | `pkg/scrapers/ecommerce/blibli.go` |
+| `tokopedia` | `tokped` | Tokopedia Marketplace | E-Commerce | `packages/tokopedia-scraper/` | `pkg/scrapers/ecommerce/tokopedia.go` |
+| `jendela360`| — | Jendela360 Property | Property | `src/indoscraping/scraper/property/jendela360.py` | `pkg/scrapers/property/jendela360.go` |
+| `sewakost` | — | SewaKost Boarding Rooms | Property | `src/indoscraping/scraper/property/sewakost.py` | `pkg/scrapers/property/sewakost.go` |
+| `rumah123` | — | Rumah123 Listings | Property | `src/indoscraping/scraper/property/rumah123.py` | — |
 
 ---
 
-## 6. Repository Topology & Workspace Architecture
+## 6. Monorepo Structure & Package Boundaries
 
-This repository is organized as a unified **`uv` monorepo workspace**:
-- Central orchestration CLI and monolithic news/property scrapers live in `src/indoscraping/`.
-- Modular e-commerce and core libraries live in isolated `packages/*` workspaces with their own standalone entrypoints and dependencies.
-- Shared data contracts, data quality checks, schema drift monitoring, and lineage recording are maintained centrally in `packages/indoscraping-core`.
+```
+indoscraping/
+├── pyproject.toml               # Root uv monorepo workspace definition
+├── Makefile                     # Cross-engine build & test orchestrator
+├── cmd/indoscraping/            # Go native CLI entry point (main.go)
+├── pkg/                         # Go scraper engines & HTTP/browser packages
+├── src/indoscraping/            # Python CLI dashboard (`cli.py`), news & property crawlers
+│   ├── cli.py                   # Central interactive Rich dashboard & CLI dispatcher
+│   ├── scraper/
+│   │   ├── news/                # Detik, Bisnis, CNBC, CNN, Kompas, Narasi crawlers
+│   │   └── property/            # Rumah123, Jendela360, SewaKost crawlers
+│   └── tools/
+│       └── indomaret_nutrition.py # OCR-based nutrition fact extraction tool
+├── packages/                    # Standalone publishable Python packages
+│   ├── indoscraping-core/       # Shared DQ, schema drift, lineage & atomic output engine
+│   ├── blibli-scraper/          # Standalone Blibli search package
+│   ├── tokopedia-scraper/       # Standalone Tokopedia Playwright interceptor package
+│   ├── alfagift-scraper/        # Standalone Alfagift TLS impersonation package
+│   └── indomaret-scraper/       # Standalone Klik Indomaret package
+└── tests/                       # Python test suite (45+ tests across CLI, DQ, & scrapers)
+```
 
-### Developer/Agent Contribution Rule
+---
+
+## 7. Developer & Agent Contribution Rules
+
 > [!IMPORTANT]
-> **Always make contributions, bug fixes, and feature requests directly in this central `indoscraping` repository.** Ensure that when running Playwright scrapers, system-installed Chrome is utilized (`channel='chrome'`, `PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1`).
+> 1. **No Backward Compatibility / Modern Only**: Never write compatibility shims or obsolete patterns. Target latest standards.
+> 2. **Canonical Keys First**: Always use canonical scraper IDs (`tokopedia`, `blibli`, `detik`, etc.). Aliases (`tokped`, `blibli-search`) exist only for user CLI convenience.
+> 3. **Dual Engine Synchronization**: When modifying shared data contracts or adding scrapers, verify output compatibility between Python and Go.
+> 4. **Testing Before Completion**: Run `make test` (or `uv run pytest` and `go test ./...`) before declaring tasks complete. All tests must pass.
+> 5. **Documentation Sync**: When adding, modifying, or removing scrapers, CLI flags, or packages, update both `README.md` and `AGENTS.md` in the same turn.

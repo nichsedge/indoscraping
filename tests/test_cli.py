@@ -87,3 +87,16 @@ def test_export_scraper_data_parquet_and_csv(tmp_path):
         with pytest.raises(SystemExit) as exc:
             main()
         assert exc.value.code == 0
+
+
+def test_cli_canonical_and_aliases():
+    assert "tokopedia" in SCRAPERS
+    assert "tokped" in SCRAPERS
+    assert "blibli" in SCRAPERS
+    assert "blibli-search" in SCRAPERS
+
+
+def test_cli_check_browser():
+    with patch("sys.argv", ["indoscraping", "check-browser"]):
+        main()
+

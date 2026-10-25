@@ -10,16 +10,18 @@ import argparse
 import json
 import logging
 import os
-import sys
 import time
-from datetime import datetime
-from pathlib import Path
-from typing import Any, Dict, List, Optional
+from datetime import UTC, datetime
+from typing import Any
 
 from curl_cffi import requests
+from curl_cffi.requests.errors import RequestsError
 from fake_useragent import UserAgent
-
-from indoscraping_core.dq import ensure_list_of_dicts, ensure_required_keys, ensure_unique
+from indoscraping_core.dq import (
+    ensure_list_of_dicts,
+    ensure_required_keys,
+    ensure_unique,
+)
 from indoscraping_core.lineage import collect_lineage
 from indoscraping_core.output import write_latest_and_history
 
@@ -54,13 +56,13 @@ def fetch_category_products(
     cat_id: str,
     cat_slug: str,
     max_pages: int = 5,
-    limit_items: Optional[int] = None,
+    limit_items: int | None = None,
     token: str = DEFAULT_TOKEN,
     signature: str = DEFAULT_SIGNATURE,
-) -> List[Dict[str, Any]]:
+) -> list[dict[str, Any]]:
     """Fetch product records for a given category from EnterKomputer."""
     ua = UserAgent()
-    products: List[Dict[str, Any]] = []
+    products: list[dict[str, Any]] = []
     page = 1
     has_more = True
 
@@ -156,14 +158,14 @@ def fetch_category_products(
             page += 1
             time.sleep(0.5)
 
-        except Exception as e:
+        except (RequestsError, KeyError, ValueError) as e:
             logger.error(f"Error fetching page {page} for [{cat_slug}]: {e}")
             break
 
     return products
 
 
-def upload_to_bigquery(products: List[Dict[str, Any]], table_id: str) -> bool:
+def upload_to_bigquery(products: list[dict[str, Any]], table_id: str) -> bool:
     """Optionally export scraped items to Google BigQuery if GCP credentials exist."""
     credentials_json = os.getenv("GCP_CREDENTIALS")
     if not credentials_json:
@@ -180,14 +182,14 @@ def upload_to_bigquery(products: List[Dict[str, Any]], table_id: str) -> bool:
                 json.loads(credentials_json),
                 scopes=["https://www.googleapis.com/auth/cloud-platform"],
             )
-        except Exception:
+        except (json.JSONDecodeError, TypeError, ValueError):
             creds = service_account.Credentials.from_service_account_file(
                 credentials_json,
                 scopes=["https://www.googleapis.com/auth/cloud-platform"],
             )
 
         df = pd.DataFrame(products)
-        df["inserted_at"] = datetime.now().date()
+        df["inserted_at"] = datetime.now(UTC).date()
         df = df.astype(str)
 
         pandas_gbq.to_gbq(
@@ -198,7 +200,7 @@ def upload_to_bigquery(products: List[Dict[str, Any]], table_id: str) -> bool:
         )
         logger.info(f"Successfully uploaded {len(products)} records to BigQuery: {table_id}")
         return True
-    except Exception as e:
+    except (ImportError, OSError, RuntimeError) as e:
         logger.error(f"Failed to upload to BigQuery {table_id}: {e}")
         return False
 
@@ -249,7 +251,7 @@ def main() -> None:
     args = parser.parse_args()
 
     requested_cats = [c.strip().lower() for c in args.categories.split(",") if c.strip()]
-    all_products: List[Dict[str, Any]] = []
+    all_products: list[dict[str, Any]] = []
 
     for cat in requested_cats:
         cat_id = CATEGORY_MAP.get(cat)
@@ -291,7 +293,7 @@ def main() -> None:
             ensure_list_of_dicts(all_products)
             ensure_required_keys(all_products, ["name", "source"])
             ensure_unique(all_products, "name")
-        except Exception as e:
+        except (TypeError, ValueError) as e:
             logger.error(f"DQ validation error: {e}")
 
     # Build lineage and save files

@@ -9,28 +9,19 @@ metrics across computer hardware without hardcoding.
 from __future__ import annotations
 
 import argparse
-import json
 import logging
-import os
 import re
 import sys
 import time
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import httpx
 from bs4 import BeautifulSoup
-
 from indoscraping_core.dq import ensure_list_of_dicts, ensure_required_keys
-from indoscraping_core.lineage import collect_lineage
 from indoscraping_core.output import write_latest_and_history
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S",
-)
 logger = logging.getLogger("passmark")
 
 GPU_URLS = [
@@ -51,24 +42,24 @@ def fetch_chart(
     url: str,
     category: str,
     segment: str,
-) -> List[Dict[str, Any]]:
+) -> list[dict[str, Any]]:
     """Scrape PassMark chart list items from HTML."""
-    logger.info(f"Fetching {category} ({segment}) from {url}...")
+    logger.info("Fetching %s (%s) from %s...", category, segment, url)
     try:
         resp = client.get(url, timeout=15.0)
         resp.raise_for_status()
-    except Exception as e:
-        logger.error(f"Failed to fetch {url}: {e}")
+    except httpx.HTTPError as err:
+        logger.error("Failed to fetch %s: %s", url, err)
         return []
 
     soup = BeautifulSoup(resp.text, "html.parser")
     chart = soup.find("ul", {"class": "chartlist"})
     if not chart:
-        logger.warning(f"No chart list found in {url}")
+        logger.warning("No chart list found in %s", url)
         return []
 
-    results: List[Dict[str, Any]] = []
-    scraped_at = datetime.now().isoformat()
+    results: list[dict[str, Any]] = []
+    scraped_at = datetime.now(UTC).isoformat()
 
     for li in chart.find_all("li"):
         prd = li.find("span", {"class": "prdname"})
@@ -97,11 +88,11 @@ def fetch_chart(
             }
         )
 
-    logger.info(f"Extracted {len(results)} {category} benchmark items from {segment} chart.")
+    logger.info("Extracted %d %s benchmark items from %s chart.", len(results), category, segment)
     return results
 
 
-def scrape_passmark_benchmarks() -> List[Dict[str, Any]]:
+def scrape_passmark_benchmarks() -> list[dict[str, Any]]:
     """Execute complete scrape of live PassMark GPU and CPU benchmark databases."""
     headers = {
         "User-Agent": (
@@ -112,31 +103,31 @@ def scrape_passmark_benchmarks() -> List[Dict[str, Any]]:
         "Accept-Language": "en-US,en;q=0.9",
     }
 
-    client = httpx.Client(headers=headers, follow_redirects=True, timeout=20.0)
-    all_benchmarks: List[Dict[str, Any]] = []
+    all_benchmarks: list[dict[str, Any]] = []
 
-    # 1. Scrape GPUs
-    for url, segment in GPU_URLS:
-        items = fetch_chart(client, url, category="GPU", segment=segment)
-        all_benchmarks.extend(items)
-        time.sleep(0.5)
+    with httpx.Client(headers=headers, follow_redirects=True, timeout=20.0) as client:
+        # 1. Scrape GPUs
+        for url, segment in GPU_URLS:
+            items = fetch_chart(client, url, category="GPU", segment=segment)
+            all_benchmarks.extend(items)
+            time.sleep(0.5)
 
-    # 2. Scrape CPUs
-    for url, segment in CPU_URLS:
-        items = fetch_chart(client, url, category="CPU", segment=segment)
-        all_benchmarks.extend(items)
-        time.sleep(0.5)
+        # 2. Scrape CPUs
+        for url, segment in CPU_URLS:
+            items = fetch_chart(client, url, category="CPU", segment=segment)
+            all_benchmarks.extend(items)
+            time.sleep(0.5)
 
     # Deduplicate by (name, category)
     seen = set()
-    deduped: List[Dict[str, Any]] = []
+    deduped: list[dict[str, Any]] = []
     for item in all_benchmarks:
         key = (item["name"].lower(), item["category"])
         if key not in seen:
             seen.add(key)
             deduped.append(item)
 
-    logger.info(f"Total unique benchmark items scraped: {len(deduped):,}")
+    logger.info("Total unique benchmark items scraped: %d", len(deduped))
     return deduped
 
 
@@ -146,47 +137,58 @@ def main() -> None:
         "--output-dir",
         type=Path,
         default=DEFAULT_OUTPUT_DIR,
-        help="Directory to save scraped benchmark JSON snapshots",
+        help="Directory to save scraped benchmark JSON files",
     )
     args = parser.parse_args()
 
+    if not logging.getLogger().handlers:
+        logging.basicConfig(
+            level=logging.INFO,
+            format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+            datefmt="%Y-%m-%d %H:%M:%S",
+        )
+
+    logger.info("Starting live online PassMark benchmark ingestion...")
     start_time = time.time()
-    logger.info("Starting PassMark hardware benchmark scrape...")
 
-    items = scrape_passmark_benchmarks()
-
-    if not items:
-        logger.error("No benchmark items scraped. Aborting.")
+    benchmarks = scrape_passmark_benchmarks()
+    if not benchmarks:
+        logger.error("PassMark scrape yielded 0 items.")
         sys.exit(1)
 
-    # Data Quality Validation
-    ensure_list_of_dicts(items)
-    ensure_required_keys(items, ["name", "category", "score", "benchmark", "scraped_at"])
+    # Validate Data Quality
+    ensure_list_of_dicts(benchmarks, "passmark")
+    ensure_required_keys(benchmarks, ["name", "category", "score", "benchmark", "source"], "passmark")
 
     # Output persistence
-    today_str = datetime.now().strftime("%Y-%m-%d")
-    latest_path = str(args.output_dir / "latest.json")
-    history_path = str(args.output_dir / "history" / f"{today_str}.json")
+    latest_path = args.output_dir / "latest.json"
+    today_str = datetime.now(UTC).strftime("%Y-%m-%d")
+    history_path = args.output_dir / f"passmark_{today_str}.json"
 
     meta = {
         "scraper": "passmark",
-        "category": "Hardware Benchmarks",
-        "total_items": len(items),
-        "gpu_count": len([x for x in items if x["category"] == "GPU"]),
-        "cpu_count": len([x for x in items if x["category"] == "CPU"]),
-        "scraped_at": datetime.now().isoformat(),
+        "category": "benchmarks",
+        "record_count": len(benchmarks),
+        "gpu_count": sum(1 for b in benchmarks if b["category"] == "GPU"),
+        "cpu_count": sum(1 for b in benchmarks if b["category"] == "CPU"),
+        "scraped_at": datetime.now(UTC).isoformat(),
+        "elapsed_seconds": round(time.time() - start_time, 2),
     }
 
     write_latest_and_history(
         latest_path=latest_path,
         history_path=history_path,
-        payload=items,
+        payload=benchmarks,
         meta=meta,
     )
 
-    duration = time.time() - start_time
-    logger.info(f"PassMark scrape completed in {duration:.2f}s.")
-    logger.info(f"Saved {len(items):,} live benchmarks to: {latest_path} and {history_path}")
+    logger.info(
+        "Successfully saved %d benchmarks (%d GPUs, %d CPUs) to %s",
+        len(benchmarks),
+        meta["gpu_count"],
+        meta["cpu_count"],
+        latest_path,
+    )
 
 
 if __name__ == "__main__":

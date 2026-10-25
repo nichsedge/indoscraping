@@ -11,17 +11,19 @@ import json
 import logging
 import os
 import re
-import sys
 import time
-from datetime import datetime
-from pathlib import Path
-from typing import Any, Dict, List, Optional
+from datetime import UTC, datetime
+from typing import Any
 
 from bs4 import BeautifulSoup
 from curl_cffi import requests
+from curl_cffi.requests.errors import RequestsError
 from fake_useragent import UserAgent
-
-from indoscraping_core.dq import ensure_list_of_dicts, ensure_required_keys, ensure_unique
+from indoscraping_core.dq import (
+    ensure_list_of_dicts,
+    ensure_required_keys,
+    ensure_unique,
+)
 from indoscraping_core.lineage import collect_lineage
 from indoscraping_core.output import write_latest_and_history
 
@@ -66,7 +68,7 @@ AVAILABLE_CATEGORIES = [
 ]
 
 
-def fetch_category_html(category: str, timeout: int = 15) -> Optional[str]:
+def fetch_category_html(category: str, timeout: int = 15) -> str | None:
     """Fetch HTML table for category with browser impersonation."""
     ua = UserAgent()
     headers = {
@@ -80,7 +82,7 @@ def fetch_category_html(category: str, timeout: int = 15) -> Optional[str]:
         resp = requests.get(url, headers=headers, impersonate="chrome", timeout=timeout)
         if resp.status_code == 200:
             return resp.text
-    except Exception as e:
+    except (RequestsError, OSError) as e:
         logger.debug(f"Failed primary URL {url}: {e}")
 
     fallback_url = f"{FALLBACK_BASE_URL}/{category}.html"
@@ -88,18 +90,18 @@ def fetch_category_html(category: str, timeout: int = 15) -> Optional[str]:
         resp = requests.get(fallback_url, headers=headers, impersonate="chrome", timeout=timeout)
         if resp.status_code == 200:
             return resp.text
-    except Exception as e:
+    except (RequestsError, OSError) as e:
         logger.error(f"Failed fallback URL {fallback_url}: {e}")
 
     return None
 
 
 def parse_viraindo_table(
-    html: str, category: str, limit_items: Optional[int] = None
-) -> List[Dict[str, Any]]:
+    html: str, category: str, limit_items: int | None = None
+) -> list[dict[str, Any]]:
     """Parse HTML table rows into structured product records."""
     soup = BeautifulSoup(html, "html.parser")
-    products: List[Dict[str, Any]] = []
+    products: list[dict[str, Any]] = []
 
     for tr in soup.find_all("tr"):
         cells = [td.get_text(strip=True) for td in tr.find_all(["td", "th"])]
@@ -140,7 +142,7 @@ def parse_viraindo_table(
     return products
 
 
-def upload_to_bigquery(products: List[Dict[str, Any]], table_id: str) -> bool:
+def upload_to_bigquery(products: list[dict[str, Any]], table_id: str) -> bool:
     """Optionally export scraped items to Google BigQuery if GCP credentials exist."""
     credentials_json = os.getenv("GCP_CREDENTIALS")
     if not credentials_json:
@@ -157,14 +159,14 @@ def upload_to_bigquery(products: List[Dict[str, Any]], table_id: str) -> bool:
                 json.loads(credentials_json),
                 scopes=["https://www.googleapis.com/auth/cloud-platform"],
             )
-        except Exception:
+        except (json.JSONDecodeError, TypeError, ValueError):
             creds = service_account.Credentials.from_service_account_file(
                 credentials_json,
                 scopes=["https://www.googleapis.com/auth/cloud-platform"],
             )
 
         df = pd.DataFrame(products)
-        df["inserted_at"] = datetime.now().date()
+        df["inserted_at"] = datetime.now(UTC).date()
         df = df.astype(str)
 
         pandas_gbq.to_gbq(
@@ -175,7 +177,7 @@ def upload_to_bigquery(products: List[Dict[str, Any]], table_id: str) -> bool:
         )
         logger.info(f"Successfully uploaded {len(products)} records to BigQuery: {table_id}")
         return True
-    except Exception as e:
+    except (ImportError, OSError, RuntimeError) as e:
         logger.error(f"Failed to upload to BigQuery {table_id}: {e}")
         return False
 
@@ -220,7 +222,7 @@ def main() -> None:
     args = parser.parse_args()
 
     requested_cats = [c.strip().lower() for c in args.categories.split(",") if c.strip()]
-    all_products: List[Dict[str, Any]] = []
+    all_products: list[dict[str, Any]] = []
 
     for cat in requested_cats:
         remaining = None
@@ -260,7 +262,7 @@ def main() -> None:
             ensure_list_of_dicts(all_products)
             ensure_required_keys(all_products, ["name", "price", "source"])
             ensure_unique(all_products, "name")
-        except Exception as e:
+        except (TypeError, ValueError) as e:
             logger.error(f"DQ validation error: {e}")
 
     # Build lineage and save files

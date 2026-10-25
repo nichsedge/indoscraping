@@ -6,9 +6,9 @@
 [![Go Version](https://img.shields.io/badge/Go-1.22%2B-00ADD8?style=for-the-badge&logo=go&logoColor=white)](README_GO.md)
 [![Env Manager](https://img.shields.io/badge/uv-astral-blueviolet?style=for-the-badge&logo=python&logoColor=white)](https://github.com/astral-sh/uv)
 [![License](https://img.shields.io/badge/License-ISC-orange?style=for-the-badge)](https://opensource.org/licenses/ISC)
-[![Tests](https://img.shields.io/badge/Tests-45%20Passed-brightgreen?style=for-the-badge)](tests/)
+[![Tests](https://img.shields.io/badge/Tests-49%20Passed-brightgreen?style=for-the-badge)](tests/)
 
-**A premium, unified dual-engine web scraper suite & visual CLI dashboard for Indonesian news, e-commerce (Tokopedia, Blibli, Alfagift, Klik Indomaret), and real estate property listings (Rumah123, Jendela360, SewaKost).**
+**A premium, unified dual-engine web scraper suite & visual CLI dashboard for Indonesian news, e-commerce (Tokopedia, Blibli, Alfagift, Klik Indomaret), real estate property listings (Rumah123, Jendela360, SewaKost), and PC hardware retail pricing (EnterKomputer, Viraindo).**
 
 </div>
 
@@ -111,6 +111,8 @@ uv run indoscraping export tokopedia --format csv
 | `jendela360`| — | Jendela360 Property | Property | ✅ | ✅ |
 | `sewakost` | — | SewaKost Boarding Rooms | Property | ✅ | ✅ |
 | `rumah123` | — | Rumah123 Listings | Property | ✅ | — |
+| `enterkomputer` | — | EnterKomputer Hardware | Hardware | ✅ | — |
+| `viraindo` | — | Viraindo PC Hardware | Hardware | ✅ | — |
 
 ---
 
@@ -126,7 +128,8 @@ indoscraping/
 │   ├── cli.py                   # Central interactive Rich dashboard & CLI dispatcher
 │   ├── scraper/
 │   │   ├── news/                # Detik, Bisnis, CNBC, CNN, Kompas, Narasi crawlers
-│   │   └── property/            # Rumah123, Jendela360, SewaKost crawlers
+│   │   ├── property/            # Rumah123, Jendela360, SewaKost crawlers
+│   │   └── hardware/            # EnterKomputer, Viraindo PC hardware price scrapers
 │   └── tools/
 │       └── indomaret_nutrition.py # OCR-based nutrition fact extraction tool
 ├── packages/                    # Standalone Publishable Packages
@@ -174,10 +177,13 @@ data/
 │   ├── indomaret/latest.json & history/YYYY-MM-DD.json
 │   ├── blibli/latest.json & history/YYYY-MM-DD.json
 │   └── tokopedia/latest.json & history/YYYY-MM-DD.json
-└── property/
-    ├── jendela360/latest.json & history/YYYY-MM-DD.json
-    ├── rumah123/latest.json & history/YYYY-MM-DD.json
-    └── sewakost/latest.json & history/YYYY-MM-DD.json
+├── property/
+│   ├── jendela360/latest.json & history/YYYY-MM-DD.json
+│   ├── rumah123/latest.json & history/YYYY-MM-DD.json
+│   └── sewakost/latest.json & history/YYYY-MM-DD.json
+└── hardware/
+    ├── enterkomputer/latest.json & history/YYYY-MM-DD.json
+    └── viraindo/latest.json & history/YYYY-MM-DD.json
 ```
 
 ---

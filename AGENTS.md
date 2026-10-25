@@ -121,10 +121,13 @@ data/
 │   ├── indomaret/latest.json & history/YYYY-MM-DD.json
 │   ├── blibli/latest.json & history/YYYY-MM-DD.json
 │   └── tokopedia/latest.json & history/YYYY-MM-DD.json
-└── property/
-    ├── jendela360/latest.json & history/YYYY-MM-DD.json
-    ├── rumah123/latest.json & history/YYYY-MM-DD.json
-    └── sewakost/latest.json & history/YYYY-MM-DD.json
+├── property/
+│   ├── jendela360/latest.json & history/YYYY-MM-DD.json
+│   ├── rumah123/latest.json & history/YYYY-MM-DD.json
+│   └── sewakost/latest.json & history/YYYY-MM-DD.json
+└── hardware/
+    ├── enterkomputer/latest.json & history/YYYY-MM-DD.json
+    └── viraindo/latest.json & history/YYYY-MM-DD.json
 ```
 
 ---
@@ -148,6 +151,8 @@ data/
 | `jendela360`| — | Jendela360 Property | Property | `src/indoscraping/scraper/property/jendela360.py` | `pkg/scrapers/property/jendela360.go` |
 | `sewakost` | — | SewaKost Boarding Rooms | Property | `src/indoscraping/scraper/property/sewakost.py` | `pkg/scrapers/property/sewakost.go` |
 | `rumah123` | — | Rumah123 Listings | Property | `src/indoscraping/scraper/property/rumah123.py` | — |
+| `enterkomputer` | — | EnterKomputer Hardware | Hardware | `src/indoscraping/scraper/hardware/enterkomputer.py` | — |
+| `viraindo` | — | Viraindo PC Hardware | Hardware | `src/indoscraping/scraper/hardware/viraindo.py` | — |
 
 ---
 
@@ -159,11 +164,12 @@ indoscraping/
 ├── Makefile                     # Cross-engine build & test orchestrator
 ├── cmd/indoscraping/            # Go native CLI entry point (main.go)
 ├── pkg/                         # Go scraper engines & HTTP/browser packages
-├── src/indoscraping/            # Python CLI dashboard (`cli.py`), news & property crawlers
+├── src/indoscraping/            # Python CLI dashboard (`cli.py`), news, property & hardware crawlers
 │   ├── cli.py                   # Central interactive Rich dashboard & CLI dispatcher
 │   ├── scraper/
 │   │   ├── news/                # Detik, Bisnis, CNBC, CNN, Kompas, Narasi crawlers
-│   │   └── property/            # Rumah123, Jendela360, SewaKost crawlers
+│   │   ├── property/            # Rumah123, Jendela360, SewaKost crawlers
+│   │   └── hardware/            # EnterKomputer, Viraindo PC hardware price scrapers
 │   └── tools/
 │       └── indomaret_nutrition.py # OCR-based nutrition fact extraction tool
 ├── packages/                    # Standalone publishable Python packages
@@ -172,7 +178,7 @@ indoscraping/
 │   ├── tokopedia-scraper/       # Standalone Tokopedia Playwright interceptor package
 │   ├── alfagift-scraper/        # Standalone Alfagift TLS impersonation package
 │   └── indomaret-scraper/       # Standalone Klik Indomaret package
-└── tests/                       # Python test suite (45+ tests across CLI, DQ, & scrapers)
+└── tests/                       # Python test suite (49+ tests across CLI, DQ, & scrapers)
 ```
 
 ---

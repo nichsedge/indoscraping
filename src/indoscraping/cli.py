@@ -147,6 +147,23 @@ SCRAPERS: Dict[str, Dict[str, Any]] = {
         "cmd": ["python", "src/indoscraping/scraper/property/rumah123.py"],
         "desc": "Scrapes property listings (houses, apartments, lands) for sale & rent via Rumah123.",
         "output_path": "data/property/rumah123/latest.json"
+    },
+    # Hardware Category
+    "enterkomputer": {
+        "name": "EnterKomputer Hardware Scraper",
+        "category": "Hardware",
+        "lang": "Python",
+        "cmd": ["python", "src/indoscraping/scraper/hardware/enterkomputer.py"],
+        "desc": "Scrapes Indonesian PC hardware prices, categories, and specs from EnterKomputer.",
+        "output_path": "data/hardware/enterkomputer/latest.json"
+    },
+    "viraindo": {
+        "name": "Viraindo PC Hardware Scraper",
+        "category": "Hardware",
+        "lang": "Python",
+        "cmd": ["python", "src/indoscraping/scraper/hardware/viraindo.py"],
+        "desc": "Extracts computer hardware price lists and components from Viraindo.",
+        "output_path": "data/hardware/viraindo/latest.json"
     }
 }
 
@@ -160,7 +177,8 @@ SCRAPER_ALIASES: Dict[str, str] = {
 CANONICAL_SCRAPERS: List[str] = [
     "detik", "bisnis", "cnbc", "cnn", "kompas", "narasi",
     "alfagift", "indomaret", "blibli", "tokopedia",
-    "jendela360", "sewakost", "rumah123"
+    "jendela360", "sewakost", "rumah123",
+    "enterkomputer", "viraindo"
 ]
 
 # Scrapers implemented in the high-performance Go native engine
@@ -596,7 +614,7 @@ def interactive_dashboard() -> None:
                         extra_args = []
                         if info["category"] == "News" or sid in ["alfagift", "indomaret"]:
                             extra_args.extend(["--limit-categories", "1", "--limit-articles", "2"])
-                        elif sid in ["detik", "narasi", "bisnis", "cnn", "kompas", "cnbc", "sewakost", "rumah123", "jendela360"]:
+                        elif sid in ["detik", "narasi", "bisnis", "cnn", "kompas", "cnbc", "sewakost", "rumah123", "jendela360", "enterkomputer", "viraindo"]:
                             extra_args.extend(["--limit-articles", "2"])
                             
                         success = run_scraper_subprocess(sid, extra_args)
@@ -820,7 +838,7 @@ def main() -> None:
             if args.limit_categories and (info["category"] == "News" or sid in ["alfagift", "indomaret"]):
                 extra_args.extend(["--limit-categories", str(args.limit_categories)])
             if args.limit_articles:
-                if info["category"] == "News" or sid in ["detik", "narasi", "bisnis", "cnn", "kompas", "cnbc", "alfagift", "indomaret", "sewakost", "rumah123", "jendela360"]:
+                if info["category"] == "News" or sid in ["detik", "narasi", "bisnis", "cnn", "kompas", "cnbc", "alfagift", "indomaret", "sewakost", "rumah123", "jendela360", "enterkomputer", "viraindo"]:
                     extra_args.extend(["--limit-articles", str(args.limit_articles)])
             
             console.print(f"\n[bold yellow]>>> [{info['category']}] Executing {info['name']} ({sid})...[/bold yellow]")

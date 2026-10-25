@@ -43,7 +43,7 @@ CPU_URLS = [
     ("https://www.cpubenchmark.net/mid_range_cpus.html", "Mid-Range"),
 ]
 
-DEFAULT_OUTPUT_DIR = Path("data/hardware/benchmarks")
+DEFAULT_OUTPUT_DIR = Path("data/benchmarks/passmark")
 
 
 def fetch_chart(

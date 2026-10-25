@@ -171,7 +171,7 @@ SCRAPERS: Dict[str, Dict[str, Any]] = {
         "lang": "Python",
         "cmd": ["python", "src/indoscraping/scraper/hardware/passmark.py"],
         "desc": "Scrapes live PassMark 3D Graphics and CPU Compute benchmark ratings for PC hardware.",
-        "output_path": "data/hardware/benchmarks/latest.json"
+        "output_path": "data/benchmarks/passmark/latest.json"
     }
 }
 

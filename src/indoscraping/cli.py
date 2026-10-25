@@ -164,6 +164,14 @@ SCRAPERS: Dict[str, Dict[str, Any]] = {
         "cmd": ["python", "src/indoscraping/scraper/hardware/viraindo.py"],
         "desc": "Extracts computer hardware price lists and components from Viraindo.",
         "output_path": "data/hardware/viraindo/latest.json"
+    },
+    "passmark": {
+        "name": "PassMark Hardware Benchmarks Scraper",
+        "category": "Hardware",
+        "lang": "Python",
+        "cmd": ["python", "src/indoscraping/scraper/hardware/passmark.py"],
+        "desc": "Scrapes live PassMark 3D Graphics and CPU Compute benchmark ratings for PC hardware.",
+        "output_path": "data/hardware/benchmarks/latest.json"
     }
 }
 
@@ -178,7 +186,7 @@ CANONICAL_SCRAPERS: List[str] = [
     "detik", "bisnis", "cnbc", "cnn", "kompas", "narasi",
     "alfagift", "indomaret", "blibli", "tokopedia",
     "jendela360", "sewakost", "rumah123",
-    "enterkomputer", "viraindo"
+    "enterkomputer", "viraindo", "passmark"
 ]
 
 # Scrapers implemented in the high-performance Go native engine

@@ -172,6 +172,16 @@ SCRAPERS: Dict[str, Dict[str, Any]] = {
         "cmd": ["python", "src/indoscraping/scraper/hardware/passmark.py"],
         "desc": "Scrapes live PassMark 3D Graphics and CPU Compute benchmark ratings for PC hardware.",
         "output_path": "data/benchmarks/passmark/latest.json"
+    },
+    # Governance Category
+    "lhkpn": {
+        "name": "KPK LHKPN State Official Wealth Scraper",
+        "category": "Governance",
+        "lang": "Python (Playwright)",
+        "cmd": ["python", "src/indoscraping/scraper/governance/lhkpn.py"],
+        "desc": "Scrapes Indonesian state official wealth reports (LHKPN) from KPK portal with itemized asset breakdown.",
+        "output_path": "data/governance/lhkpn/latest.json",
+        "env": {"PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1"}
     }
 }
 
@@ -186,7 +196,7 @@ CANONICAL_SCRAPERS: List[str] = [
     "detik", "bisnis", "cnbc", "cnn", "kompas", "narasi",
     "alfagift", "indomaret", "blibli", "tokopedia",
     "jendela360", "sewakost", "rumah123",
-    "enterkomputer", "viraindo", "passmark"
+    "enterkomputer", "viraindo", "passmark", "lhkpn"
 ]
 
 # Scrapers implemented in the high-performance Go native engine
@@ -475,17 +485,25 @@ def inspect_scraper_data(sid: str) -> None:
         title = str(title).strip().replace("\n", " ")[:35]
 
         key_info = []
-        if "price" in item or "min_price" in item or "priceRaw" in item or "price_raw" in item:
+        if "total_harta" in item:
+            key_info.append(f"Harta: {item['total_harta']}")
+        elif "price" in item or "min_price" in item or "priceRaw" in item or "price_raw" in item:
             p = item.get("price_raw") or item.get("priceRaw") or item.get("price") or item.get("min_price")
             key_info.append(f"Price: {p}")
-        if "date" in item or "published_at" in item or "pubDate" in item or "scraped_at" in item:
+
+        if "tanggal_lapor" in item:
+            key_info.append(f"{item['tanggal_lapor']}")
+        elif "date" in item or "published_at" in item or "pubDate" in item or "scraped_at" in item:
             d = item.get("pubDate") or item.get("published_at") or item.get("date") or item.get("scraped_at")
             key_info.append(f"{str(d)[:16]}")
+
         if "category" in item:
             key_info.append(f"Cat: {item['category']}")
+        elif "jabatan" in item:
+            key_info.append(f"{item['jabatan'][:20]}")
 
         info_str = " | ".join(key_info) if key_info else "-"
-        url_str = item.get("url") or item.get("productUrl") or item.get("link") or "-"
+        url_str = item.get("url") or item.get("productUrl") or item.get("link") or item.get("lembaga") or "-"
 
         table.add_row(str(idx), title, info_str, str(url_str))
 
@@ -622,7 +640,7 @@ def interactive_dashboard() -> None:
                         extra_args = []
                         if info["category"] == "News" or sid in ["alfagift", "indomaret"]:
                             extra_args.extend(["--limit-categories", "1", "--limit-articles", "2"])
-                        elif sid in ["detik", "narasi", "bisnis", "cnn", "kompas", "cnbc", "sewakost", "rumah123", "jendela360", "enterkomputer", "viraindo"]:
+                        elif sid in ["detik", "narasi", "bisnis", "cnn", "kompas", "cnbc", "sewakost", "rumah123", "jendela360", "enterkomputer", "viraindo", "lhkpn"]:
                             extra_args.extend(["--limit-articles", "2"])
                             
                         success = run_scraper_subprocess(sid, extra_args)
@@ -694,7 +712,9 @@ def interactive_dashboard() -> None:
                 "This collection aggregates various crawlers focused on Indonesian data:\n"
                 "  - [magenta]News[/magenta]: Detik, Bisnis.com, CNBC, CNN, Kompas, Narasi\n"
                 "  - [magenta]E-Commerce[/magenta]: Alfagift, Klik Indomaret, Blibli, Tokopedia\n"
-                "  - [magenta]Property[/magenta]: Rumah123, SewaKost, Jendela360\n\n"
+                "  - [magenta]Property[/magenta]: Rumah123, SewaKost, Jendela360\n"
+                "  - [magenta]Hardware[/magenta]: EnterKomputer, Viraindo, PassMark\n"
+                "  - [magenta]Governance[/magenta]: KPK LHKPN State Official Wealth Portal\n\n"
                 "Dependencies are managed efficiently using [green]uv[/green].\n"
                 "Data can be exported to Parquet and CSV via 'indoscraping export <scraper_id>'."
             )
@@ -846,7 +866,7 @@ def main() -> None:
             if args.limit_categories and (info["category"] == "News" or sid in ["alfagift", "indomaret"]):
                 extra_args.extend(["--limit-categories", str(args.limit_categories)])
             if args.limit_articles:
-                if info["category"] == "News" or sid in ["detik", "narasi", "bisnis", "cnn", "kompas", "cnbc", "alfagift", "indomaret", "sewakost", "rumah123", "jendela360", "enterkomputer", "viraindo"]:
+                if info["category"] == "News" or sid in ["detik", "narasi", "bisnis", "cnn", "kompas", "cnbc", "alfagift", "indomaret", "sewakost", "rumah123", "jendela360", "enterkomputer", "viraindo", "lhkpn"]:
                     extra_args.extend(["--limit-articles", str(args.limit_articles)])
             
             console.print(f"\n[bold yellow]>>> [{info['category']}] Executing {info['name']} ({sid})...[/bold yellow]")

@@ -75,6 +75,9 @@ uv run indoscraping run sewakost --area jakarta/jakarta-barat/palmerah --limit-p
 uv run indoscraping run jendela360 --limit-pages 1
 uv run indoscraping run rumah123 --limit-articles 5 --deal-type jual --category rumah
 
+# Governance (KPK LHKPN Official Wealth Reports)
+uv run indoscraping run lhkpn --query "Prabowo Subianto" --limit-articles 5
+
 # Go Engine Direct Execution
 ./bin/indoscraping run cnbc --limit-articles 5
 ./bin/indoscraping run sewakost --limit-pages 1
@@ -125,9 +128,12 @@ data/
 │   ├── jendela360/latest.json & history/YYYY-MM-DD.json
 │   ├── rumah123/latest.json & history/YYYY-MM-DD.json
 │   └── sewakost/latest.json & history/YYYY-MM-DD.json
-└── hardware/
-    ├── enterkomputer/latest.json & history/YYYY-MM-DD.json
-    └── viraindo/latest.json & history/YYYY-MM-DD.json
+├── hardware/
+│   ├── enterkomputer/latest.json & history/YYYY-MM-DD.json
+│   ├── viraindo/latest.json & history/YYYY-MM-DD.json
+│   └── passmark/latest.json & history/YYYY-MM-DD.json
+└── governance/
+    └── lhkpn/latest.json & history/YYYY-MM-DD.json
 ```
 
 ---
@@ -153,6 +159,8 @@ data/
 | `rumah123` | — | Rumah123 Listings | Property | `src/indoscraping/scraper/property/rumah123.py` | — |
 | `enterkomputer` | — | EnterKomputer Hardware | Hardware | `src/indoscraping/scraper/hardware/enterkomputer.py` | — |
 | `viraindo` | — | Viraindo PC Hardware | Hardware | `src/indoscraping/scraper/hardware/viraindo.py` | — |
+| `passmark` | — | PassMark Benchmarks | Hardware | `src/indoscraping/scraper/hardware/passmark.py` | — |
+| `lhkpn` | — | KPK LHKPN State Official Wealth | Governance | `src/indoscraping/scraper/governance/lhkpn.py` | — |
 
 ---
 
@@ -169,7 +177,8 @@ indoscraping/
 │   ├── scraper/
 │   │   ├── news/                # Detik, Bisnis, CNBC, CNN, Kompas, Narasi crawlers
 │   │   ├── property/            # Rumah123, Jendela360, SewaKost crawlers
-│   │   └── hardware/            # EnterKomputer, Viraindo PC hardware price scrapers
+│   │   ├── hardware/            # EnterKomputer, Viraindo, PassMark PC hardware scrapers
+│   │   └── governance/          # KPK LHKPN State Official Wealth crawler
 │   └── tools/
 │       └── indomaret_nutrition.py # OCR-based nutrition fact extraction tool
 ├── packages/                    # Standalone publishable Python packages

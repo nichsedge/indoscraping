@@ -77,6 +77,7 @@ uv run indoscraping run tokopedia --query "laptop"
 uv run indoscraping run blibli --query "kopi"
 uv run indoscraping run sewakost --limit-pages 1
 uv run indoscraping run rumah123 --limit-articles 5
+uv run indoscraping run lhkpn --query "Prabowo Subianto" --limit-articles 5
 
 # Execute via Go Native Engine (High-Performance / Termux)
 uv run indoscraping run sewakost --engine go --limit-pages 1
@@ -113,6 +114,8 @@ uv run indoscraping export tokopedia --format csv
 | `rumah123` | — | Rumah123 Listings | Property | ✅ | — |
 | `enterkomputer` | — | EnterKomputer Hardware | Hardware | ✅ | — |
 | `viraindo` | — | Viraindo PC Hardware | Hardware | ✅ | — |
+| `passmark` | — | PassMark Benchmarks | Hardware | ✅ | — |
+| `lhkpn` | — | KPK LHKPN State Official Wealth | Governance | ✅ (Playwright) | — |
 
 ---
 
@@ -129,7 +132,8 @@ indoscraping/
 │   ├── scraper/
 │   │   ├── news/                # Detik, Bisnis, CNBC, CNN, Kompas, Narasi crawlers
 │   │   ├── property/            # Rumah123, Jendela360, SewaKost crawlers
-│   │   └── hardware/            # EnterKomputer, Viraindo PC hardware price scrapers
+│   │   ├── hardware/            # EnterKomputer, Viraindo, PassMark PC hardware scrapers
+│   │   └── governance/          # KPK LHKPN State Official Wealth crawler
 │   └── tools/
 │       └── indomaret_nutrition.py # OCR-based nutrition fact extraction tool
 ├── packages/                    # Standalone Publishable Packages
@@ -181,9 +185,12 @@ data/
 │   ├── jendela360/latest.json & history/YYYY-MM-DD.json
 │   ├── rumah123/latest.json & history/YYYY-MM-DD.json
 │   └── sewakost/latest.json & history/YYYY-MM-DD.json
-└── hardware/
-    ├── enterkomputer/latest.json & history/YYYY-MM-DD.json
-    └── viraindo/latest.json & history/YYYY-MM-DD.json
+├── hardware/
+│   ├── enterkomputer/latest.json & history/YYYY-MM-DD.json
+│   ├── viraindo/latest.json & history/YYYY-MM-DD.json
+│   └── passmark/latest.json & history/YYYY-MM-DD.json
+└── governance/
+    └── lhkpn/latest.json & history/YYYY-MM-DD.json
 ```
 
 ---

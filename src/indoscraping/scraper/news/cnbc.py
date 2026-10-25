@@ -13,15 +13,6 @@ from indoscraping_core import write_latest_and_history, collect_lineage
 from fake_useragent import UserAgent
 ua = UserAgent()
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler('cnbc_scraper.log'),
-        logging.StreamHandler()
-    ]
-)
 logger = logging.getLogger(__name__)
 
 BASE_URL = "https://www.cnbcindonesia.com"

@@ -182,6 +182,15 @@ SCRAPERS: Dict[str, Dict[str, Any]] = {
         "desc": "Scrapes Indonesian state official wealth reports (LHKPN) from KPK portal with itemized asset breakdown.",
         "output_path": "data/governance/lhkpn/latest.json",
         "env": {"PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1"}
+    },
+    # Food & Nutrition Category
+    "panganku": {
+        "name": "Panganku.org Indonesian Food & Nutrition Scraper",
+        "category": "Food",
+        "lang": "Python",
+        "cmd": ["python", "src/indoscraping/scraper/food/panganku.py"],
+        "desc": "Scrapes official Indonesian food composition and nutritional database (TKPI) from panganku.org.",
+        "output_path": "data/food/panganku/latest.json"
     }
 }
 
@@ -189,6 +198,8 @@ SCRAPERS: Dict[str, Dict[str, Any]] = {
 SCRAPER_ALIASES: Dict[str, str] = {
     "tokped": "tokopedia",
     "blibli-search": "blibli",
+    "pangan": "panganku",
+    "tkpi": "panganku",
 }
 
 # Canonical primary scraper IDs for displays and deduplication
@@ -196,7 +207,8 @@ CANONICAL_SCRAPERS: List[str] = [
     "detik", "bisnis", "cnbc", "cnn", "kompas", "narasi",
     "alfagift", "indomaret", "blibli", "tokopedia",
     "jendela360", "sewakost", "rumah123",
-    "enterkomputer", "viraindo", "passmark", "lhkpn"
+    "enterkomputer", "viraindo", "passmark", "lhkpn",
+    "panganku"
 ]
 
 # Scrapers implemented in the high-performance Go native engine
@@ -481,7 +493,7 @@ def inspect_scraper_data(sid: str) -> None:
             table.add_row(str(idx), str(item)[:35], "-", "-")
             continue
 
-        title = item.get("title") or item.get("productName") or item.get("name") or "Unknown"
+        title = item.get("title") or item.get("productName") or item.get("name") or item.get("Nama") or item.get("Kode") or "Unknown"
         title = str(title).strip().replace("\n", " ")[:35]
 
         key_info = []
@@ -490,6 +502,10 @@ def inspect_scraper_data(sid: str) -> None:
         elif "price" in item or "min_price" in item or "priceRaw" in item or "price_raw" in item:
             p = item.get("price_raw") or item.get("priceRaw") or item.get("price") or item.get("min_price")
             key_info.append(f"Price: {p}")
+        elif "Energy" in item or "Protein" in item:
+            cal = item.get("Energy", "-")
+            prot = item.get("Protein", "-")
+            key_info.append(f"{cal} kcal | {prot}g Prot")
 
         if "tanggal_lapor" in item:
             key_info.append(f"{item['tanggal_lapor']}")
@@ -501,9 +517,11 @@ def inspect_scraper_data(sid: str) -> None:
             key_info.append(f"Cat: {item['category']}")
         elif "jabatan" in item:
             key_info.append(f"{item['jabatan'][:20]}")
+        elif "Kategori" in item:
+            key_info.append(f"{item['Kategori'][:20]}")
 
         info_str = " | ".join(key_info) if key_info else "-"
-        url_str = item.get("url") or item.get("productUrl") or item.get("link") or item.get("lembaga") or "-"
+        url_str = item.get("url") or item.get("productUrl") or item.get("link") or item.get("lembaga") or item.get("Kode") or "-"
 
         table.add_row(str(idx), title, info_str, str(url_str))
 
@@ -714,7 +732,8 @@ def interactive_dashboard() -> None:
                 "  - [magenta]E-Commerce[/magenta]: Alfagift, Klik Indomaret, Blibli, Tokopedia\n"
                 "  - [magenta]Property[/magenta]: Rumah123, SewaKost, Jendela360\n"
                 "  - [magenta]Hardware[/magenta]: EnterKomputer, Viraindo, PassMark\n"
-                "  - [magenta]Governance[/magenta]: KPK LHKPN State Official Wealth Portal\n\n"
+                "  - [magenta]Governance[/magenta]: KPK LHKPN State Official Wealth Portal\n"
+                "  - [magenta]Food[/magenta]: Panganku.org Indonesian Food & Nutrition (TKPI)\n\n"
                 "Dependencies are managed efficiently using [green]uv[/green].\n"
                 "Data can be exported to Parquet and CSV via 'indoscraping export <scraper_id>'."
             )

@@ -6,9 +6,9 @@
 [![Go Version](https://img.shields.io/badge/Go-1.22%2B-00ADD8?style=for-the-badge&logo=go&logoColor=white)](README_GO.md)
 [![Env Manager](https://img.shields.io/badge/uv-astral-blueviolet?style=for-the-badge&logo=python&logoColor=white)](https://github.com/astral-sh/uv)
 [![License](https://img.shields.io/badge/License-ISC-orange?style=for-the-badge)](https://opensource.org/licenses/ISC)
-[![Tests](https://img.shields.io/badge/Tests-49%20Passed-brightgreen?style=for-the-badge)](tests/)
+[![Tests](https://img.shields.io/badge/Tests-56%20Passed-brightgreen?style=for-the-badge)](tests/)
 
-**A premium, unified dual-engine web scraper suite & visual CLI dashboard for Indonesian news, e-commerce (Tokopedia, Blibli, Alfagift, Klik Indomaret), real estate property listings (Rumah123, Jendela360, SewaKost), and PC hardware retail pricing (EnterKomputer, Viraindo).**
+**A premium, unified dual-engine web scraper suite & visual CLI dashboard for Indonesian news, e-commerce (Tokopedia, Blibli, Alfagift, Klik Indomaret), real estate property listings (Rumah123, Jendela360, SewaKost), PC hardware retail pricing (EnterKomputer, Viraindo), state official governance wealth reports (KPK LHKPN), and national food & nutrition composition (Panganku TKPI).**
 
 </div>
 
@@ -69,10 +69,12 @@ uv run indoscraping status
 
 # Inspect scraped data preview in terminal
 uv run indoscraping inspect sewakost
+uv run indoscraping inspect panganku
 uv run indoscraping inspect tokopedia
 
 # Execute a scraper (Python Engine by default)
 uv run indoscraping run detik --limit-articles 5
+uv run indoscraping run panganku --limit 10
 uv run indoscraping run tokopedia --query "laptop"
 uv run indoscraping run blibli --query "kopi"
 uv run indoscraping run sewakost --limit-pages 1
@@ -86,9 +88,11 @@ uv run indoscraping run detik --engine go --limit-articles 5
 
 # Batch execute scrapers by category
 uv run indoscraping run-all --category news --limit-articles 2
+uv run indoscraping run-all --category food
 uv run indoscraping run-all --category property --limit-articles 2
 
 # Export datasets to Parquet or CSV for analytics (DuckDB, Pandas, Polars)
+uv run indoscraping export panganku --format parquet
 uv run indoscraping export rumah123 --format parquet
 uv run indoscraping export tokopedia --format csv
 ```
@@ -116,6 +120,7 @@ uv run indoscraping export tokopedia --format csv
 | `viraindo` | — | Viraindo PC Hardware | Hardware | ✅ | — |
 | `passmark` | — | PassMark Benchmarks | Hardware | ✅ | — |
 | `lhkpn` | — | KPK LHKPN State Official Wealth | Governance | ✅ (Playwright) | — |
+| `panganku` | `pangan`, `tkpi` | Panganku.org Food & Nutrition (TKPI) | Food | ✅ | — |
 
 ---
 
@@ -133,7 +138,8 @@ indoscraping/
 │   │   ├── news/                # Detik, Bisnis, CNBC, CNN, Kompas, Narasi crawlers
 │   │   ├── property/            # Rumah123, Jendela360, SewaKost crawlers
 │   │   ├── hardware/            # EnterKomputer, Viraindo, PassMark PC hardware scrapers
-│   │   └── governance/          # KPK LHKPN State Official Wealth crawler
+│   │   ├── governance/          # KPK LHKPN State Official Wealth crawler
+│   │   └── food/                # Panganku.org Indonesian Food & Nutrition (TKPI) crawler
 │   └── tools/
 │       └── indomaret_nutrition.py # OCR-based nutrition fact extraction tool
 ├── packages/                    # Standalone Publishable Packages

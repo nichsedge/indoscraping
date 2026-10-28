@@ -78,6 +78,10 @@ uv run indoscraping run rumah123 --limit-articles 5 --deal-type jual --category 
 # Governance (KPK LHKPN Official Wealth Reports)
 uv run indoscraping run lhkpn --query "Prabowo Subianto" --limit-articles 5
 
+# Food & Nutrition (Panganku TKPI)
+uv run indoscraping run panganku --limit 10
+uv run indoscraping export panganku --format parquet
+
 # Go Engine Direct Execution
 ./bin/indoscraping run cnbc --limit-articles 5
 ./bin/indoscraping run sewakost --limit-pages 1
@@ -132,8 +136,10 @@ data/
 │   ├── enterkomputer/latest.json & history/YYYY-MM-DD.json
 │   ├── viraindo/latest.json & history/YYYY-MM-DD.json
 │   └── passmark/latest.json & history/YYYY-MM-DD.json
-└── governance/
-    └── lhkpn/latest.json & history/YYYY-MM-DD.json
+├── governance/
+│   └── lhkpn/latest.json & history/YYYY-MM-DD.json
+└── food/
+    └── panganku/latest.json & history/YYYY-MM-DD.json
 ```
 
 ---
@@ -161,6 +167,7 @@ data/
 | `viraindo` | — | Viraindo PC Hardware | Hardware | `src/indoscraping/scraper/hardware/viraindo.py` | — |
 | `passmark` | — | PassMark Benchmarks | Hardware | `src/indoscraping/scraper/hardware/passmark.py` | — |
 | `lhkpn` | — | KPK LHKPN State Official Wealth | Governance | `src/indoscraping/scraper/governance/lhkpn.py` | — |
+| `panganku` | `pangan`, `tkpi` | Panganku.org Food & Nutrition | Food | `src/indoscraping/scraper/food/panganku.py` | — |
 
 ---
 
@@ -178,7 +185,8 @@ indoscraping/
 │   │   ├── news/                # Detik, Bisnis, CNBC, CNN, Kompas, Narasi crawlers
 │   │   ├── property/            # Rumah123, Jendela360, SewaKost crawlers
 │   │   ├── hardware/            # EnterKomputer, Viraindo, PassMark PC hardware scrapers
-│   │   └── governance/          # KPK LHKPN State Official Wealth crawler
+│   │   ├── governance/          # KPK LHKPN State Official Wealth crawler
+│   │   └── food/                # Panganku.org Food & Nutrition crawler
 │   └── tools/
 │       └── indomaret_nutrition.py # OCR-based nutrition fact extraction tool
 ├── packages/                    # Standalone publishable Python packages

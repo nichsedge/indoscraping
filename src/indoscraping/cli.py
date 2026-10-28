@@ -833,6 +833,13 @@ def main() -> None:
     ocr_parser = subparsers.add_parser("ocr-nutrition", help="Extract nutrition facts from product images via RapidOCR")
     ocr_parser.add_argument("ocr_args", nargs=argparse.REMAINDER, help="Arguments passed to Indomaret nutrition OCR tool")
 
+    # Publish command
+    publish_parser = subparsers.add_parser("publish", help="Publish scraped datasets to Hugging Face Hub or GitHub Releases")
+    publish_parser.add_argument("scraper_id", choices=["panganku"], help="Scraper ID whose dataset to publish")
+    publish_parser.add_argument("--target", choices=["hf", "github", "all"], default="hf", help="Target platform: hf, github, or all (default: hf)")
+    publish_parser.add_argument("--repo-name", default=None, help="Custom repository name for Hugging Face")
+    publish_parser.add_argument("--private", action="store_true", help="Make repository private (default: public)")
+
     args = parser.parse_args()
 
     if args.command == "list":
@@ -859,6 +866,14 @@ def main() -> None:
         from indoscraping.tools.indomaret_nutrition import main as ocr_main
         sys.argv = ["indoscraping ocr-nutrition"] + args.ocr_args
         ocr_main()
+    elif args.command == "publish":
+        from indoscraping.tools.publish import main as publish_main
+        sys.argv = ["indoscraping publish", args.scraper_id, "--target", args.target]
+        if args.repo_name:
+            sys.argv.extend(["--repo-name", args.repo_name])
+        if args.private:
+            sys.argv.append("--private")
+        publish_main()
     elif args.command == "run-all":
         # Identify canonical scrapers to run
         scrapers_to_run = []

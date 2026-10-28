@@ -81,6 +81,7 @@ uv run indoscraping run lhkpn --query "Prabowo Subianto" --limit-articles 5
 # Food & Nutrition (Panganku TKPI)
 uv run indoscraping run panganku --limit 10
 uv run indoscraping export panganku --format parquet
+uv run indoscraping publish panganku --target all
 
 # Go Engine Direct Execution
 ./bin/indoscraping run cnbc --limit-articles 5

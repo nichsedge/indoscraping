@@ -833,12 +833,12 @@ def main() -> None:
     ocr_parser = subparsers.add_parser("ocr-nutrition", help="Extract nutrition facts from product images via RapidOCR")
     ocr_parser.add_argument("ocr_args", nargs=argparse.REMAINDER, help="Arguments passed to Indomaret nutrition OCR tool")
 
-    # Publish command
-    publish_parser = subparsers.add_parser("publish", help="Publish scraped datasets to Hugging Face Hub or GitHub Releases")
-    publish_parser.add_argument("scraper_id", choices=["panganku"], help="Scraper ID whose dataset to publish")
-    publish_parser.add_argument("--target", choices=["hf", "github", "all"], default="hf", help="Target platform: hf, github, or all (default: hf)")
-    publish_parser.add_argument("--repo-name", default=None, help="Custom repository name for Hugging Face")
-    publish_parser.add_argument("--private", action="store_true", help="Make repository private (default: public)")
+    # Publish Panganku dataset command
+    publish_parser = subparsers.add_parser("publish-panganku", help="Publish Panganku dataset to Hugging Face, Kaggle, or GitHub Releases")
+    publish_parser.add_argument("--target", choices=["hf", "github", "kaggle", "all"], default="all", help="Target platform: hf, github, kaggle, or all (default: all)")
+    publish_parser.add_argument("--hf-repo", default="panganku-indonesian-food-nutrition", help="Custom repository name for Hugging Face")
+    publish_parser.add_argument("--kaggle-slug", default="panganku-food-nutrition", help="Custom Kaggle dataset slug")
+    publish_parser.add_argument("--private", action="store_true", help="Make repository private (HF only)")
 
     args = parser.parse_args()
 
@@ -866,11 +866,13 @@ def main() -> None:
         from indoscraping.tools.indomaret_nutrition import main as ocr_main
         sys.argv = ["indoscraping ocr-nutrition"] + args.ocr_args
         ocr_main()
-    elif args.command == "publish":
-        from indoscraping.tools.publish import main as publish_main
-        sys.argv = ["indoscraping publish", args.scraper_id, "--target", args.target]
-        if args.repo_name:
-            sys.argv.extend(["--repo-name", args.repo_name])
+    elif args.command == "publish-panganku":
+        from indoscraping.tools.publish_panganku import main as publish_main
+        sys.argv = ["indoscraping publish-panganku", "--target", args.target]
+        if args.hf_repo:
+            sys.argv.extend(["--hf-repo", args.hf_repo])
+        if args.kaggle_slug:
+            sys.argv.extend(["--kaggle-slug", args.kaggle_slug])
         if args.private:
             sys.argv.append("--private")
         publish_main()

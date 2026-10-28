@@ -6,7 +6,7 @@
 [![Go Version](https://img.shields.io/badge/Go-1.22%2B-00ADD8?style=for-the-badge&logo=go&logoColor=white)](README_GO.md)
 [![Env Manager](https://img.shields.io/badge/uv-astral-blueviolet?style=for-the-badge&logo=python&logoColor=white)](https://github.com/astral-sh/uv)
 [![License](https://img.shields.io/badge/License-ISC-orange?style=for-the-badge)](https://opensource.org/licenses/ISC)
-[![Tests](https://img.shields.io/badge/Tests-58%20Passed-brightgreen?style=for-the-badge)](tests/)
+[![Tests](https://img.shields.io/badge/Tests-59%20Passed-brightgreen?style=for-the-badge)](tests/)
 
 **A premium, unified dual-engine web scraper suite & visual CLI dashboard for Indonesian news, e-commerce (Tokopedia, Blibli, Alfagift, Klik Indomaret), real estate property listings (Rumah123, Jendela360, SewaKost), PC hardware retail pricing (EnterKomputer, Viraindo), state official governance wealth reports (KPK LHKPN), and national food & nutrition composition (Panganku TKPI).**
 
@@ -96,10 +96,11 @@ uv run indoscraping export panganku --format parquet
 uv run indoscraping export rumah123 --format parquet
 uv run indoscraping export tokopedia --format csv
 
-# Programmatically publish datasets to public hubs (Hugging Face / GitHub Releases)
-uv run indoscraping publish panganku --target hf
-uv run indoscraping publish panganku --target github
-uv run indoscraping publish panganku --target all
+# Programmatically publish Panganku dataset to public hubs (Hugging Face / Kaggle / GitHub)
+uv run indoscraping publish-panganku --target hf
+uv run indoscraping publish-panganku --target kaggle
+uv run indoscraping publish-panganku --target github
+uv run indoscraping publish-panganku --target all
 ```
 
 ---

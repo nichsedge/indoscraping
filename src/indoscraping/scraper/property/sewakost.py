@@ -72,8 +72,10 @@ class SewaKostScraper:
                 found_page = 0
                 for a in links:
                     href = a.get("href", "")
-                    if "/kost/" in href and href != base_area_url and not href.endswith(f"/{area_path.split('/')[-1]}/"):
-                        kost_urls.add(urljoin(BASE_URL, href))
+                    full_href = urljoin(BASE_URL, href)
+                    # Strictly ensure it is a real Jakarta kost listing ending with listing ID
+                    if re.search(r"/kost/jakarta/[a-z0-9\-]+/[a-z0-9\-]+-\d{4,8}/?$", full_href):
+                        kost_urls.add(full_href)
                         found_page += 1
                 logger.info(f"  Page {page}: found {found_page} listings")
                 if limit and len(kost_urls) >= limit:

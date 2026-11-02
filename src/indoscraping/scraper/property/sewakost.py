@@ -35,6 +35,15 @@ DEFAULT_AREAS = [
     "jakarta/jakarta-pusat/tanah-abang",
     "jakarta/jakarta-barat/grogol-petamburan",
     "jakarta/jakarta-barat/kebon-jeruk",
+    "jakarta/jakarta-pusat/cempaka-putih",
+    "jakarta/jakarta-selatan/kebayoran-baru",
+    "jakarta/jakarta-selatan/setiabudi",
+    "jakarta/jakarta-selatan/tebet",
+    "jakarta/jakarta-selatan/cilandak",
+    "jakarta/jakarta-selatan/mampang-prapatan",
+    "jakarta/jakarta-timur/matraman",
+    "jakarta/jakarta-utara/kelapa-gading",
+    "jakarta",
 ]
 
 
@@ -166,24 +175,44 @@ def save_kost_results(data: Any, output_base: Path, date_str: str) -> None:
     history_dir = output_base / "history"
     history_dir.mkdir(parents=True, exist_ok=True)
 
-    latest_file = str(output_base / "latest.json")
-    history_file = str(history_dir / f"{date_str}.json")
+    latest_file = output_base / "latest.json"
+    history_file = history_dir / f"{date_str}.json"
+
+    # Merge with existing records by URL
+    combined: Dict[str, Any] = {}
+    if latest_file.exists():
+        try:
+            with open(latest_file, "r", encoding="utf-8") as f:
+                prev_data = json.load(f)
+                if isinstance(prev_data, list):
+                    for item in prev_data:
+                        if isinstance(item, dict) and item.get("url"):
+                            combined[item["url"]] = item
+        except Exception as e:
+            logger.warning(f"Could not load previous latest.json for merging: {e}")
+
+    for item in data:
+        if isinstance(item, dict) and item.get("url"):
+            combined[item["url"]] = item
+
+    merged_list = list(combined.values())
 
     meta = {
         "scraper": "sewakost",
         "scraped_at": datetime.now().isoformat(),
-        "total_records": len(data),
+        "total_records": len(merged_list),
+        "newly_scraped": len(data),
         "date": date_str,
     }
 
     write_latest_and_history(
-        latest_path=latest_file,
-        history_path=history_file,
-        payload=data,
+        latest_path=str(latest_file),
+        history_path=str(history_file),
+        payload=merged_list,
         meta=meta,
     )
 
-    logger.info(f"Saved latest snapshot to: {latest_file} ({len(data)} items)")
+    logger.info(f"Saved latest snapshot to: {latest_file} ({len(merged_list)} total items, {len(data)} in this run)")
     logger.info(f"Saved history snapshot to: {history_file}")
 
 
@@ -193,14 +222,14 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Scrape affordable kost listings from SewaKost.com")
     parser.add_argument(
         "--area",
-        default="jakarta/jakarta-barat/palmerah",
-        help="Area subpath on SewaKost (e.g., 'jakarta/jakarta-barat/palmerah' or 'jakarta/jakarta-pusat/tanah-abang')",
+        default="all",
+        help="Area subpath on SewaKost or 'all' to scrape all key Jakarta commuter districts",
     )
     parser.add_argument(
         "--max-pages",
         type=int,
-        default=2,
-        help="Max pages of listings to scrape per area (default: 2)",
+        default=3,
+        help="Max pages of listings to scrape per area (default: 3)",
     )
     parser.add_argument(
         "--output-dir",
@@ -212,13 +241,13 @@ def main() -> None:
         "--limit",
         type=int,
         default=None,
-        help="Max number of kost listings to scrape (useful for smoketesting)",
+        help="Max number of kost listings to scrape per area",
     )
     parser.add_argument(
         "--workers",
         type=int,
-        default=5,
-        help="Number of concurrent detail scraping workers (default: 5)",
+        default=8,
+        help="Number of concurrent detail scraping workers (default: 8)",
     )
     parser.add_argument(
         "--date",
@@ -228,11 +257,17 @@ def main() -> None:
 
     args = parser.parse_args()
 
+    areas_to_scrape = DEFAULT_AREAS if args.area.lower() == "all" else [a.strip() for a in args.area.split(",") if a.strip()]
+
     scraper = SewaKostScraper(max_workers=args.workers)
-    results = scraper.fetch_area_listings(args.area, max_pages=args.max_pages, limit=args.limit_articles)
+    all_results = []
+    for area in areas_to_scrape:
+        logger.info(f"--- Scraping Area: {area} ---")
+        area_res = scraper.fetch_area_listings(area, max_pages=args.max_pages, limit=args.limit_articles)
+        all_results.extend(area_res)
 
     out_path = Path(args.output_dir)
-    save_kost_results(results, out_path, args.date)
+    save_kost_results(all_results, out_path, args.date)
 
 
 if __name__ == "__main__":

@@ -10,7 +10,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/PuerkitoBio/goquery"
 	"github.com/nichsedge/indoscraping/pkg/core"
 )
 
@@ -112,114 +111,6 @@ type BankingOptions struct {
 }
 
 // ScrapeMandiriRates attempts live scraping from Bank Mandiri public pages.
-func ScrapeMandiriRates(client *http.Client) (sbdk SBDKBenchmark, dep []DepositoTenor, err error) {
-	sbdkURL := "https://www.bankmandiri.co.id/suku-bunga-dasar-kredit"
-	req, err := http.NewRequest("GET", sbdkURL, nil)
-	if err != nil {
-		return sbdk, dep, err
-	}
-	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36")
-
-	resp, err := client.Do(req)
-	if err == nil && resp.StatusCode == http.StatusOK {
-		defer resp.Body.Close()
-		doc, parseErr := goquery.NewDocumentFromReader(resp.Body)
-		if parseErr == nil {
-			doc.Find("table.table tbody tr").Each(func(i int, s *goquery.Selection) {
-				text := s.Text()
-				if strings.Contains(text, "Suku Bunga Dasar Kredit") {
-					cells := s.Find("td")
-					if cells.Length() >= 5 {
-						sbdk.Korporasi = parsePercent(cells.Eq(1).Text(), 8.35)
-						sbdk.Ritel = parsePercent(cells.Eq(3).Text(), 9.60)
-						sbdk.Mikro = parsePercent(cells.Eq(5).Text(), 12.75)
-						sbdk.Period = "Latest OJK SBDK Disclosure"
-					}
-				}
-			})
-		}
-	}
-
-	if sbdk.Korporasi == 0 {
-		sbdk = SBDKBenchmark{
-			Korporasi: 8.35,
-			Ritel:     9.60,
-			Mikro:     12.75,
-			KPR:       12.10,
-			Period:    "POJK No. 13/2024 Mandated Disclosure",
-		}
-	}
-
-	dep = []DepositoTenor{
-		{TenorMonths: 1, RatePA: 2.25},
-		{TenorMonths: 3, RatePA: 2.25},
-		{TenorMonths: 6, RatePA: 2.50},
-		{TenorMonths: 12, RatePA: 2.50},
-	}
-	return sbdk, dep, nil
-}
-
-// ScrapeSeaBankRates attempts live scraping from SeaBank public fees & rates page.
-func ScrapeSeaBankRates(client *http.Client) ([]RateTier, []DepositoTenor, error) {
-	targetURL := "https://www.seabank.co.id/info/biaya-bunga"
-	req, err := http.NewRequest("GET", targetURL, nil)
-	if err != nil {
-		return defaultSeaBankRates()
-	}
-	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36")
-
-	resp, err := client.Do(req)
-	if err != nil || resp.StatusCode != http.StatusOK {
-		return defaultSeaBankRates()
-	}
-	defer resp.Body.Close()
-
-	doc, err := goquery.NewDocumentFromReader(resp.Body)
-	if err != nil {
-		return defaultSeaBankRates()
-	}
-
-	var tiers []RateTier
-	doc.Find("table").First().Find("tbody tr").Each(func(i int, s *goquery.Selection) {
-		cells := s.Find("td")
-		if cells.Length() >= 2 {
-			rateText := cells.Last().Text()
-			val := parsePercent(rateText, 0)
-			if val > 0 {
-				if strings.Contains(cells.First().Text(), "149.999.999") {
-					tiers = append(tiers, RateTier{MinBalance: 0, MaxBalance: 149999999, RatePA: val})
-				} else if strings.Contains(cells.First().Text(), "150.000.000") {
-					tiers = append(tiers, RateTier{MinBalance: 150000000, MaxBalance: 0, RatePA: val})
-				}
-			}
-		}
-	})
-
-	if len(tiers) == 0 {
-		return defaultSeaBankRates()
-	}
-
-	dep := []DepositoTenor{
-		{TenorMonths: 1, RatePA: 5.00},
-		{TenorMonths: 3, RatePA: 5.50},
-		{TenorMonths: 6, RatePA: 6.00},
-	}
-	return tiers, dep, nil
-}
-
-func defaultSeaBankRates() ([]RateTier, []DepositoTenor, error) {
-	tiers := []RateTier{
-		{MinBalance: 0, MaxBalance: 149999999, RatePA: 2.50},
-		{MinBalance: 150000000, MaxBalance: 0, RatePA: 3.50},
-	}
-	dep := []DepositoTenor{
-		{TenorMonths: 1, RatePA: 5.00},
-		{TenorMonths: 3, RatePA: 5.50},
-		{TenorMonths: 6, RatePA: 6.00},
-	}
-	return tiers, dep, nil
-}
-
 func parsePercent(raw string, fallback float64) float64 {
 	clean := strings.TrimSpace(raw)
 	clean = strings.ReplaceAll(clean, "%", "")
@@ -236,13 +127,37 @@ func parsePercent(raw string, fallback float64) float64 {
 	return val
 }
 
-// BuildBankProfiles constructs the comprehensive database of commercial and digital banks in Indonesia.
-func BuildBankProfiles(client *http.Client) []BankAccountProfile {
+// BuildBankProfiles constructs the comprehensive database of commercial and digital banks in Indonesia,
+// dynamically scraping live bank websites and disclosures with strict fail-fast error checking.
+func BuildBankProfiles(client *http.Client) ([]BankAccountProfile, error) {
 	scrapedAt := time.Now().UTC().Format(time.RFC3339)
 
-	// Fetch dynamic data where possible
-	mandiriSBDK, mandiriDep, _ := ScrapeMandiriRates(client)
-	seaTiers, seaDep, _ := ScrapeSeaBankRates(client)
+	// 1. Scrape live BCA SBDK
+	bcaSBDK, err := ScrapeBCASBDK(client)
+	if err != nil {
+		return nil, fmt.Errorf("live BCA SBDK ingestion failed: %w", err)
+	}
+
+	// 2. Scrape live Mandiri SBDK & Dana
+	mandiriSBDK, err := ScrapeMandiriSBDK(client)
+	if err != nil {
+		return nil, fmt.Errorf("live Mandiri SBDK ingestion failed: %w", err)
+	}
+	mandiriTiers, mandiriDep, err := ScrapeMandiriDana(client)
+	if err != nil {
+		return nil, fmt.Errorf("live Mandiri Dana ingestion failed: %w", err)
+	}
+
+	// 3. Scrape live SeaBank
+	seaTiers, seaDep, seaFees, err := ScrapeSeaBank(client)
+	if err != nil {
+		return nil, fmt.Errorf("live SeaBank ingestion failed: %w", err)
+	}
+
+	seaAdminFee := 0.0
+	if val, ok := seaFees["Biaya administrasi"]; ok {
+		seaAdminFee = val
+	}
 
 	profiles := []BankAccountProfile{
 		// 1. Bank Central Asia (BCA) - Tahapan Bisnis & Gold
@@ -252,7 +167,7 @@ func BuildBankProfiles(client *http.Client) []BankAccountProfile {
 			BankType:            "KBMI 4 Commercial",
 			AccountName:         "Tahapan BCA / Tahapan Bisnis",
 			MonthlyAdminFee:     17000,
-			MonthlyDebitCardFee: 0, // Included in administrative tier
+			MonthlyDebitCardFee: 0,
 			MinBalanceRequired:  50000,
 			BelowMinPenalty:     0,
 			BiFastFee:           2500,
@@ -261,7 +176,7 @@ func BuildBankProfiles(client *http.Client) []BankAccountProfile {
 			DailyPurchaseLimit:  75000000,
 			QRISSettlementSpeed: "T+0 (Up to 4x daily batch)",
 			QRISMdrStandard:     0.7,
-			CashbackDebitPct:    0.1, // Reward BCA point conversion
+			CashbackDebitPct:    0.1,
 			CashDepositNetwork:  "Nationwide 18,000+ ATMs & CRMs",
 			SavingsTiers: []RateTier{
 				{MinBalance: 0, MaxBalance: 50000000, RatePA: 0.00},
@@ -275,13 +190,7 @@ func BuildBankProfiles(client *http.Client) []BankAccountProfile {
 				{TenorMonths: 6, RatePA: 2.25},
 				{TenorMonths: 12, RatePA: 2.50},
 			},
-			SBDK: SBDKBenchmark{
-				Korporasi: 7.95,
-				Ritel:     8.20,
-				Mikro:     8.20,
-				KPR:       8.30,
-				Period:    "POJK No. 13/2024 Disclosure",
-			},
+			SBDK:      bcaSBDK,
 			ScrapedAt: scrapedAt,
 			SourceURL: "https://www.bca.co.id/id/informasi/Suku-Bunga-Dasar-Kredit",
 		},
@@ -294,25 +203,20 @@ func BuildBankProfiles(client *http.Client) []BankAccountProfile {
 			MonthlyAdminFee:     12500,
 			MonthlyDebitCardFee: 4500,
 			MinBalanceRequired:  1000000,
-			BelowMinPenalty:     25000, // If average balance < Rp 10M
+			BelowMinPenalty:     25000,
 			BiFastFee:           2500,
 			FreeTransferQuota:   0,
 			DailyBiFastLimit:    250000000,
 			DailyPurchaseLimit:  100000000,
 			QRISSettlementSpeed: "T+0 (3x daily settlement via Livin' Merchant)",
 			QRISMdrStandard:     0.7,
-			CashbackDebitPct:    0.15, // Livin' Poin
+			CashbackDebitPct:    0.15,
 			CashDepositNetwork:  "Nationwide 13,000+ Branch & ATM Network",
-			SavingsTiers: []RateTier{
-				{MinBalance: 0, MaxBalance: 50000000, RatePA: 0.00},
-				{MinBalance: 50000000, MaxBalance: 500000000, RatePA: 0.20},
-				{MinBalance: 500000000, MaxBalance: 1000000000, RatePA: 0.50},
-				{MinBalance: 1000000000, MaxBalance: 0, RatePA: 1.00},
-			},
-			DepositoTenors: mandiriDep,
-			SBDK:           mandiriSBDK,
-			ScrapedAt:      scrapedAt,
-			SourceURL:      "https://www.bankmandiri.co.id/suku-bunga-dana",
+			SavingsTiers:        mandiriTiers,
+			DepositoTenors:      mandiriDep,
+			SBDK:                mandiriSBDK,
+			ScrapedAt:           scrapedAt,
+			SourceURL:           "https://www.bankmandiri.co.id/suku-bunga-dana",
 		},
 		// 3. Bank Rakyat Indonesia (BRI) - BritAma Bisnis
 		{
@@ -320,10 +224,10 @@ func BuildBankProfiles(client *http.Client) []BankAccountProfile {
 			BankName:            "Bank Rakyat Indonesia (BRI)",
 			BankType:            "KBMI 4 Commercial",
 			AccountName:         "BritAma Bisnis",
-			MonthlyAdminFee:     0, // Free if monthly balance >= Rp 5M
+			MonthlyAdminFee:     0,
 			MonthlyDebitCardFee: 0,
 			MinBalanceRequired:  50000,
-			BelowMinPenalty:     50000, // If balance < Rp 5M
+			BelowMinPenalty:     50000,
 			BiFastFee:           2500,
 			FreeTransferQuota:   0,
 			DailyBiFastLimit:    250000000,
@@ -400,12 +304,12 @@ func BuildBankProfiles(client *http.Client) []BankAccountProfile {
 			BankName:            "CIMB Niaga",
 			BankType:            "KBMI 3 Commercial",
 			AccountName:         "OCTO Savers & Tabungan Usaha",
-			MonthlyAdminFee:     0, // Free if balance >= Rp 2M
+			MonthlyAdminFee:     0,
 			MonthlyDebitCardFee: 0,
 			MinBalanceRequired:  50000,
 			BelowMinPenalty:     17500,
 			BiFastFee:           2500,
-			FreeTransferQuota:   20, // 20x free monthly BI-FAST transfers
+			FreeTransferQuota:   20,
 			DailyBiFastLimit:    250000000,
 			DailyPurchaseLimit:  50000000,
 			QRISSettlementSpeed: "T+0 (OCTO Merchant)",
@@ -438,17 +342,17 @@ func BuildBankProfiles(client *http.Client) []BankAccountProfile {
 			BankName:            "SeaBank Indonesia",
 			BankType:            "Digital Bank (Shopee Ecosystem)",
 			AccountName:         "SeaBank Digital Savings",
-			MonthlyAdminFee:     0,
+			MonthlyAdminFee:     seaAdminFee,
 			MonthlyDebitCardFee: 0,
 			MinBalanceRequired:  0,
 			BelowMinPenalty:     0,
 			BiFastFee:           0,
-			FreeTransferQuota:   100, // 100x free monthly transfers
+			FreeTransferQuota:   100,
 			DailyBiFastLimit:    200000000,
 			DailyPurchaseLimit:  50000000,
 			QRISSettlementSpeed: "T+1 (ShopeePay Merchant Sync)",
 			QRISMdrStandard:     0.7,
-			CashbackDebitPct:    0.5, // Shopee seller & cashback promotions
+			CashbackDebitPct:    0.5,
 			CashDepositNetwork:  "Shopee Indomaret / Alfamart Partner Network",
 			SavingsTiers:        seaTiers,
 			DepositoTenors:      seaDep,
@@ -473,7 +377,7 @@ func BuildBankProfiles(client *http.Client) []BankAccountProfile {
 			MinBalanceRequired:  0,
 			BelowMinPenalty:     0,
 			BiFastFee:           0,
-			FreeTransferQuota:   50, // Level 3 / Jago Bisnis default
+			FreeTransferQuota:   50,
 			DailyBiFastLimit:    250000000,
 			DailyPurchaseLimit:  50000000,
 			QRISSettlementSpeed: "T+0 (GoPay Merchant Instant Settlement)",
@@ -481,7 +385,7 @@ func BuildBankProfiles(client *http.Client) []BankAccountProfile {
 			CashbackDebitPct:    0.2,
 			CashDepositNetwork:  "GoPay Partner / BCA ATM Bridge",
 			SavingsTiers: []RateTier{
-				{MinBalance: 0, MaxBalance: 0, RatePA: 2.75}, // Flat 2.75%
+				{MinBalance: 0, MaxBalance: 0, RatePA: 2.75},
 			},
 			DepositoTenors: []DepositoTenor{
 				{TenorMonths: 1, RatePA: 4.25},
@@ -510,7 +414,7 @@ func BuildBankProfiles(client *http.Client) []BankAccountProfile {
 			MinBalanceRequired:  0,
 			BelowMinPenalty:     0,
 			BiFastFee:           0,
-			FreeTransferQuota:   20, // 20x free monthly BI-FAST
+			FreeTransferQuota:   20,
 			DailyBiFastLimit:    100000000,
 			DailyPurchaseLimit:  25000000,
 			QRISSettlementSpeed: "T+1",
@@ -538,7 +442,7 @@ func BuildBankProfiles(client *http.Client) []BankAccountProfile {
 		},
 	}
 
-	return profiles
+	return profiles, nil
 }
 
 // CalculateEffectiveAPY calculates the weighted APY for a given balance against tier brackets.
@@ -667,7 +571,10 @@ func RunBankingRatesIngestion(opts BankingOptions) (*BankingRatesDataset, error)
 	}
 
 	client := core.HTTPClient()
-	banks := BuildBankProfiles(client)
+	banks, err := BuildBankProfiles(client)
+	if err != nil {
+		return nil, fmt.Errorf("banking profiles dynamic ingestion failed: %w", err)
+	}
 
 	// Scenario determination
 	scenario := RetailerScenario{

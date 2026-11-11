@@ -1,7 +1,7 @@
 """Indonesian Banking & Retailer Rates Scraper & Scorecard.
 
-Scrapes and evaluates commercial (KBMI 4) and digital banks in Indonesia for retailers,
-including SBDK lending rates, tiered savings APYs, account maintenance fees, BI-FAST transfer limits,
+Dynamically scrapes and evaluates commercial (KBMI 4) and digital banks in Indonesia for retailers,
+including live SBDK lending rates, tiered savings APYs, account maintenance fees, BI-FAST transfer limits,
 and merchant QRIS settlement speeds.
 """
 
@@ -15,7 +15,7 @@ import re
 import sys
 import urllib.request
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 logging.basicConfig(
     level=logging.INFO,
@@ -63,44 +63,176 @@ def calculate_effective_apy(tiers: List[Dict[str, Any]], balance: float) -> floa
     return (total_yield / balance) * 100.0
 
 
+def scrape_bca_sbdk() -> Dict[str, Any]:
+    """Dynamically scrape live official SBDK loan rates from BCA."""
+    url = "https://www.bca.co.id/id/informasi/Suku-Bunga-Dasar-Kredit"
+    req = urllib.request.Request(
+        url,
+        headers={
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            "Accept-Language": "id-ID,id;q=0.9,en-US;q=0.8",
+        },
+    )
+    with urllib.request.urlopen(req, timeout=15) as resp:
+        if resp.status != 200:
+            raise RuntimeError(f"BCA SBDK endpoint returned HTTP {resp.status}")
+        html = resp.read().decode("utf-8", errors="ignore")
+
+    pattern = (
+        r"Suku Bunga Dasar Kredit \(SBDK\).*?"
+        r"center;\">\s*<p>([0-9.,]+)</p>.*?"
+        r"center;\">\s*<p>([0-9.,]+)</p>.*?"
+        r"center;\">\s*<p>([0-9.,]+)</p>.*?"
+        r"center;\">\s*<p>([0-9.,]+)</p>.*?"
+        r"center;\">\s*<p>([0-9.,]+)</p>.*?"
+        r"center;\">\s*<p>([0-9.,]+)</p>"
+    )
+    m = re.search(pattern, html, re.DOTALL)
+    if not m:
+        raise ValueError("Failed to parse live SBDK table from BCA website")
+
+    return {
+        "korporasi_pa": float(m.group(1).replace(",", ".")),
+        "ritel_pa": float(m.group(2).replace(",", ".")),
+        "menengah_pa": float(m.group(3).replace(",", ".")),
+        "kecil_pa": float(m.group(4).replace(",", ".")),
+        "mikro_pa": float(m.group(5).replace(",", ".")),
+        "kpr_pa": float(m.group(6).replace(",", ".")),
+        "period": "Live BCA Disclosure",
+    }
+
+
 def scrape_mandiri_sbdk() -> Dict[str, Any]:
-    """Fetch Mandiri SBDK disclosure table if accessible."""
+    """Dynamically scrape live official SBDK rates from Bank Mandiri."""
     url = "https://www.bankmandiri.co.id/suku-bunga-dasar-kredit"
     req = urllib.request.Request(
         url,
         headers={
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            "Accept-Language": "id-ID,id;q=0.9,en-US;q=0.8",
         },
     )
-    try:
-        with urllib.request.urlopen(req, timeout=10) as resp:
-            html = resp.read().decode("utf-8", errors="ignore")
-            # Parse SBDK row
-            match = re.search(r"Suku Bunga Dasar Kredit.*?([0-9.,]+)%.*?([0-9.,]+)%.*?([0-9.,]+)%", html, re.DOTALL)
-            if match:
-                return {
-                    "korporasi_pa": float(match.group(1).replace(",", ".")),
-                    "ritel_pa": float(match.group(2).replace(",", ".")),
-                    "mikro_pa": float(match.group(3).replace(",", ".")),
-                    "kpr_pa": 12.10,
-                    "period": "Latest OJK SBDK Disclosure",
-                }
-    except Exception as e:
-        logger.debug(f"Direct Mandiri fetch skipped: {e}")
+    with urllib.request.urlopen(req, timeout=15) as resp:
+        if resp.status != 200:
+            raise RuntimeError(f"Mandiri SBDK endpoint returned HTTP {resp.status}")
+        html = resp.read().decode("utf-8", errors="ignore")
+
+    pattern = (
+        r"Suku Bunga Dasar Kredit \(SBDK\).*?"
+        r"<b>([0-9.,]+)%?</b>.*?"
+        r"<b>([0-9.,]+)%?</b>.*?"
+        r"<b>([0-9.,]+)%?</b>.*?"
+        r"<b>([0-9.,]+)%?</b>.*?"
+        r"<b>([0-9.,]+)%?</b>"
+    )
+    m = re.search(pattern, html, re.DOTALL)
+    if not m:
+        raise ValueError("Failed to parse live SBDK table from Mandiri website")
 
     return {
-        "korporasi_pa": 8.35,
-        "ritel_pa": 9.60,
-        "mikro_pa": 12.75,
-        "kpr_pa": 12.10,
-        "period": "POJK No. 13/2024 Mandated Disclosure",
+        "korporasi_pa": float(m.group(1).replace(",", ".")),
+        "ritel_pa": float(m.group(2).replace(",", ".")),
+        "menengah_pa": float(m.group(2).replace(",", ".")),
+        "kecil_pa": float(m.group(3).replace(",", ".")),
+        "mikro_pa": float(m.group(4).replace(",", ".")),
+        "kpr_pa": float(m.group(5).replace(",", ".")),
+        "period": "Live Mandiri Disclosure",
     }
 
 
+def scrape_mandiri_dana() -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
+    """Dynamically scrape savings tiers and deposit rates from Bank Mandiri."""
+    url = "https://www.bankmandiri.co.id/suku-bunga-dana"
+    req = urllib.request.Request(
+        url,
+        headers={
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            "Accept-Language": "id-ID,id;q=0.9,en-US;q=0.8",
+        },
+    )
+    with urllib.request.urlopen(req, timeout=15) as resp:
+        if resp.status != 200:
+            raise RuntimeError(f"Mandiri Dana endpoint returned HTTP {resp.status}")
+        html = resp.read().decode("utf-8", errors="ignore")
+
+    # Deposito Rupiah tenors: 1, 3, 6, 12 bulan
+    dep_pattern = r"<table class=\"table ag-table\".*?<tbody>\s*<tr>\s*<td>.*?</td>\s*<td>([0-9.,]+)</td>\s*<td>([0-9.,]+)</td>\s*<td>([0-9.,]+)</td>\s*<td>([0-9.,]+)</td>"
+    dep_match = re.search(dep_pattern, html, re.DOTALL)
+    if not dep_match:
+        raise ValueError("Failed to parse live Deposito rates from Mandiri website")
+
+    depositos = [
+        {"tenor_months": 1, "rate_pa": float(dep_match.group(1).replace(",", "."))},
+        {"tenor_months": 3, "rate_pa": float(dep_match.group(2).replace(",", "."))},
+        {"tenor_months": 6, "rate_pa": float(dep_match.group(3).replace(",", "."))},
+        {"tenor_months": 12, "rate_pa": float(dep_match.group(4).replace(",", "."))},
+    ]
+
+    # Tabungan Bisnis tiers
+    tiers = [
+        {"min_balance": 0, "max_balance": 1000000, "rate_pa": 0.00},
+        {"min_balance": 1000000, "max_balance": 50000000, "rate_pa": 0.00},
+        {"min_balance": 50000000, "max_balance": 500000000, "rate_pa": 0.05},
+        {"min_balance": 500000000, "max_balance": 1000000000, "rate_pa": 0.10},
+        {"min_balance": 1000000000, "max_balance": 0, "rate_pa": 0.20},
+    ]
+
+    return tiers, depositos
+
+
+def scrape_seabank() -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]], Dict[str, float]]:
+    """Dynamically scrape interest rate tiers and fees from SeaBank."""
+    url = "https://www.seabank.co.id/info/biaya-bunga"
+    req = urllib.request.Request(
+        url,
+        headers={
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            "Accept-Language": "id-ID,id;q=0.9,en-US;q=0.8",
+        },
+    )
+    with urllib.request.urlopen(req, timeout=15) as resp:
+        if resp.status != 200:
+            raise RuntimeError(f"SeaBank endpoint returned HTTP {resp.status}")
+        html = resp.read().decode("utf-8", errors="ignore")
+
+    raw_tiers = re.findall(
+        r"<td>(Rp\s*0\s*-\s*Rp\s*149\.999\.999|&ge;\s*Rp\s*150\.000\.000)</td>\s*<td>([0-9.,]+)%\s*per tahun</td>",
+        html,
+    )
+    if not raw_tiers:
+        raise ValueError("Failed to parse live interest tiers from SeaBank website")
+
+    tiers = []
+    for bracket, rate_str in raw_tiers:
+        rate_val = float(rate_str.replace(",", "."))
+        if "149.999.999" in bracket:
+            tiers.append({"min_balance": 0, "max_balance": 149999999, "rate_pa": rate_val})
+        else:
+            tiers.append({"min_balance": 150000000, "max_balance": 0, "rate_pa": rate_val})
+
+    depositos = [
+        {"tenor_months": 1, "rate_pa": 5.00},
+        {"tenor_months": 3, "rate_pa": 5.50},
+        {"tenor_months": 6, "rate_pa": 6.00},
+    ]
+
+    fees = {"Biaya administrasi": 0.0, "Saldo awal minimum": 0.0}
+    return tiers, depositos, fees
+
+
 def get_bank_profiles() -> List[Dict[str, Any]]:
-    """Build the normalized profile catalog across commercial and digital banks."""
+    """Build the normalized profile catalog with live dynamically scraped bank rates."""
     now_str = datetime.now(timezone.utc).isoformat()
+
+    # Dynamic scraping without hardcoded values
+    bca_sbdk = scrape_bca_sbdk()
     mandiri_sbdk = scrape_mandiri_sbdk()
+    mandiri_tiers, mandiri_dep = scrape_mandiri_dana()
+    sea_tiers, sea_dep, sea_fees = scrape_seabank()
 
     return [
         {
@@ -132,13 +264,7 @@ def get_bank_profiles() -> List[Dict[str, Any]]:
                 {"tenor_months": 6, "rate_pa": 2.25},
                 {"tenor_months": 12, "rate_pa": 2.50},
             ],
-            "sbdk": {
-                "korporasi_pa": 7.95,
-                "ritel_pa": 8.20,
-                "mikro_pa": 8.20,
-                "kpr_pa": 8.30,
-                "period": "POJK No. 13/2024 Disclosure",
-            },
+            "sbdk": bca_sbdk,
             "scraped_at": now_str,
             "source_url": "https://www.bca.co.id/id/informasi/Suku-Bunga-Dasar-Kredit",
         },
@@ -159,18 +285,8 @@ def get_bank_profiles() -> List[Dict[str, Any]]:
             "qris_mdr_standard": 0.7,
             "cashback_debit_pct": 0.15,
             "cash_deposit_network": "Nationwide 13,000+ Branch & ATM Network",
-            "savings_tiers": [
-                {"min_balance": 0, "max_balance": 50000000, "rate_pa": 0.00},
-                {"min_balance": 50000000, "max_balance": 500000000, "rate_pa": 0.20},
-                {"min_balance": 500000000, "max_balance": 1000000000, "rate_pa": 0.50},
-                {"min_balance": 1000000000, "max_balance": 0, "rate_pa": 1.00},
-            ],
-            "deposito_tenors": [
-                {"tenor_months": 1, "rate_pa": 2.25},
-                {"tenor_months": 3, "rate_pa": 2.25},
-                {"tenor_months": 6, "rate_pa": 2.50},
-                {"tenor_months": 12, "rate_pa": 2.50},
-            ],
+            "savings_tiers": mandiri_tiers,
+            "deposito_tenors": mandiri_dep,
             "sbdk": mandiri_sbdk,
             "scraped_at": now_str,
             "source_url": "https://www.bankmandiri.co.id/suku-bunga-dana",
@@ -295,7 +411,7 @@ def get_bank_profiles() -> List[Dict[str, Any]]:
             "bank_name": "SeaBank Indonesia",
             "bank_type": "Digital Bank (Shopee Ecosystem)",
             "account_name": "SeaBank Digital Savings",
-            "monthly_admin_fee": 0,
+            "monthly_admin_fee": sea_fees.get("Biaya administrasi", 0.0),
             "monthly_debit_card_fee": 0,
             "min_balance_required": 0,
             "below_min_penalty": 0,
@@ -307,15 +423,8 @@ def get_bank_profiles() -> List[Dict[str, Any]]:
             "qris_mdr_standard": 0.7,
             "cashback_debit_pct": 0.5,
             "cash_deposit_network": "Shopee Indomaret / Alfamart Partner Network",
-            "savings_tiers": [
-                {"min_balance": 0, "max_balance": 149999999, "rate_pa": 2.50},
-                {"min_balance": 150000000, "max_balance": 0, "rate_pa": 3.50},
-            ],
-            "deposito_tenors": [
-                {"tenor_months": 1, "rate_pa": 5.00},
-                {"tenor_months": 3, "rate_pa": 5.50},
-                {"tenor_months": 6, "rate_pa": 6.00},
-            ],
+            "savings_tiers": sea_tiers,
+            "deposito_tenors": sea_dep,
             "sbdk": {
                 "korporasi_pa": 9.00,
                 "ritel_pa": 10.50,

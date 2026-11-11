@@ -3,6 +3,7 @@ package core
 import (
 	"encoding/json"
 	"fmt"
+	"html"
 	"os"
 	"path/filepath"
 	"strings"
@@ -117,6 +118,9 @@ func CleanText(text string) string {
 	res := sb.String()
 	if len(res) > 0 && res[len(res)-1] == ' ' {
 		res = res[:len(res)-1]
+	}
+	if strings.ContainsRune(res, '&') {
+		res = html.UnescapeString(res)
 	}
 	return res
 }

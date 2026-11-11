@@ -83,10 +83,16 @@ uv run indoscraping run panganku --limit 10
 uv run indoscraping export panganku --format parquet
 uv run indoscraping publish-panganku --target all
 
+# Banking & Retailer Rates Evaluation
+uv run indoscraping run banking
+./bin/indoscraping best-bank --profile micro
+./bin/indoscraping best-bank --profile sme --balance 150000000
+
 # Go Engine Direct Execution
 ./bin/indoscraping run cnbc --limit-articles 5
 ./bin/indoscraping run sewakost --limit-pages 1
 ./bin/indoscraping run passmark
+./bin/indoscraping run banking
 ./bin/indoscraping bijak-beli --limit-per-item 5
 ./bin/indoscraping run all --limit-items 3
 ./bin/indoscraping export csv
@@ -141,8 +147,10 @@ data/
 │   └── passmark/latest.json & history/YYYY-MM-DD.json
 ├── governance/
 │   └── lhkpn/latest.json & history/YYYY-MM-DD.json
-└── food/
-    └── panganku/latest.json & history/YYYY-MM-DD.json
+├── food/
+│   └── panganku/latest.json & history/YYYY-MM-DD.json
+└── banking/
+    └── rates/latest.json & history/YYYY-MM-DD.json
 ```
 
 ---
@@ -171,6 +179,7 @@ data/
 | `passmark` | — | PassMark Benchmarks | Hardware | `src/indoscraping/scraper/hardware/passmark.py` | `pkg/scrapers/hardware/passmark.go` |
 | `lhkpn` | — | KPK LHKPN State Official Wealth | Governance | `src/indoscraping/scraper/governance/lhkpn.py` | — |
 | `panganku` | `pangan`, `tkpi` | Panganku.org Food & Nutrition | Food | `src/indoscraping/scraper/food/panganku.py` | — |
+| `banking` | `rates`, `best-bank` | Indonesian Banking & Retailer Rates | Banking | `src/indoscraping/scraper/banking/rates.py` | `pkg/scrapers/banking/rates.go` |
 
 ---
 

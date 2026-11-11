@@ -191,6 +191,15 @@ SCRAPERS: Dict[str, Dict[str, Any]] = {
         "cmd": ["python", "src/indoscraping/scraper/food/panganku.py"],
         "desc": "Scrapes official Indonesian food composition and nutritional database (TKPI) from panganku.org.",
         "output_path": "data/food/panganku/latest.json"
+    },
+    # Banking Category
+    "banking": {
+        "name": "Indonesian Banking & Retailer Rates",
+        "category": "Banking",
+        "lang": "Python, Go",
+        "cmd": ["python", "src/indoscraping/scraper/banking/rates.py"],
+        "desc": "Scrapes SBDK lending rates, tiered savings APYs, fees, and evaluates best banks for retailers.",
+        "output_path": "data/banking/rates/latest.json"
     }
 }
 
@@ -200,6 +209,8 @@ SCRAPER_ALIASES: Dict[str, str] = {
     "blibli-search": "blibli",
     "pangan": "panganku",
     "tkpi": "panganku",
+    "rates": "banking",
+    "best-bank": "banking",
 }
 
 # Canonical primary scraper IDs for displays and deduplication
@@ -208,14 +219,14 @@ CANONICAL_SCRAPERS: List[str] = [
     "alfagift", "indomaret", "blibli", "tokopedia",
     "jendela360", "sewakost", "rumah123",
     "enterkomputer", "viraindo", "passmark", "lhkpn",
-    "panganku"
+    "panganku", "banking"
 ]
 
 # Scrapers implemented in the high-performance Go native engine
 GO_SCRAPERS = {
     "detik", "cnbc", "cnn", "kompas",
     "alfagift", "blibli", "tokopedia", "indomaret",
-    "jendela360", "sewakost"
+    "jendela360", "sewakost", "passmark", "banking"
 }
 
 

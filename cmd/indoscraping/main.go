@@ -12,6 +12,7 @@ import (
 	"github.com/nichsedge/indoscraping/pkg/browser"
 	"github.com/nichsedge/indoscraping/pkg/core"
 	"github.com/nichsedge/indoscraping/pkg/export"
+	"github.com/nichsedge/indoscraping/pkg/scrapers/banking"
 	"github.com/nichsedge/indoscraping/pkg/scrapers/ecommerce"
 	"github.com/nichsedge/indoscraping/pkg/scrapers/hardware"
 	"github.com/nichsedge/indoscraping/pkg/scrapers/news"
@@ -56,6 +57,8 @@ func main() {
 		handleCheckBrowser()
 	case "bijak-beli":
 		handleBijakBeli(os.Args[2:])
+	case "best-bank", "banking":
+		handleBestBank(os.Args[2:])
 	case "export":
 		handleExport(os.Args[2:])
 	case "run":
@@ -76,6 +79,7 @@ func printUsage() {
 	fmt.Printf("  %slist%s                 List all registered scrapers\n", colorGreen, colorReset)
 	fmt.Printf("  %srun <scraper|all>%s    Execute a specific scraper or all concurrently\n", colorGreen, colorReset)
 	fmt.Printf("  %sbijak-beli%s           Run cross-retailer consumer staples price index (Alfamart vs Indomaret)\n", colorGreen, colorReset)
+	fmt.Printf("  %sbest-bank%s            Evaluate best Indonesian banks for retailers (rates, fees, QRIS, APY)\n", colorGreen, colorReset)
 	fmt.Printf("  %sexport csv [path]%s    Export JSON datasets into CSV format\n", colorGreen, colorReset)
 	fmt.Printf("  %sstatus%s               Check generated data metrics and files\n", colorGreen, colorReset)
 	fmt.Printf("  %scheck-browser%s        Detect system Chromium and verify browser engine\n", colorGreen, colorReset)
@@ -178,6 +182,13 @@ var registry = []scraperInfo{
 		Category: "Hardware",
 		Engine:   "HTTP / HTML Parser",
 		Desc:     "Extracts live PassMark GPU (G3D Mark) and CPU compute ratings for price-to-performance analysis.",
+	},
+	{
+		Key:      "banking",
+		Name:     "Indonesian Banking & Rates",
+		Category: "Banking",
+		Engine:   "HTTP / Regulatory Aggregator",
+		Desc:     "Scrapes SBDK lending rates, tiered savings APYs, fees, and evaluates best banks for retailers.",
 	},
 }
 
@@ -319,6 +330,67 @@ func handleBijakBeli(args []string) {
 	fmt.Printf("   JSON: %s\n   CSV:  %s\n\n", *outputPath, csvPath)
 }
 
+func handleBestBank(args []string) {
+	printBanner()
+	fs := flag.NewFlagSet("best-bank", flag.ExitOnError)
+	profile := fs.String("profile", "micro", "Retailer operational profile: micro (Rp 25M), sme (Rp 120M), corporate (Rp 500M)")
+	balance := fs.Float64("balance", 0, "Custom average idle balance in IDR")
+	outputPath := fs.String("output", "data/banking/rates/latest.json", "Output dataset path")
+	_ = fs.Parse(args)
+
+	fmt.Printf("%s🏦 [RETAILER BANKING ADVISOR]%s Evaluating best Indonesian banks for retailers...\n", colorGreen, colorReset)
+	fmt.Printf("   Operational Profile: %s%s%s", colorBold, strings.ToUpper(*profile), colorReset)
+	if *balance > 0 {
+		fmt.Printf(" | Custom Balance: Rp %s", core.FormatIDR(int(*balance)))
+	}
+	fmt.Println()
+	fmt.Println()
+
+	dataset, err := banking.RunBankingRatesIngestion(banking.BankingOptions{
+		OutputPath:  *outputPath,
+		ProfileType: *profile,
+		IdleBalance: *balance,
+	})
+	if err != nil {
+		fmt.Printf("%s❌ Error running banking analysis:%s %v\n", colorRed, colorReset, err)
+		return
+	}
+
+	fmt.Printf("%s📊 Macro Benchmarks:%s BI-Rate: %.2f%% | LPS Guaranteed Deposit Rate: %.2f%% (Max: Rp 2.000.000.000)\n",
+		colorBold, colorReset, dataset.MacroBenchmarks.BIRatePA, dataset.MacroBenchmarks.LPSGuaranteedRateIDR)
+	fmt.Println(strings.Repeat("─", 112))
+
+	fmt.Printf("%-5s %-26s %-16s %-11s %-15s %-15s %-10s %s\n",
+		"RANK", "BANK NAME", "CATEGORY", "NET APY", "NET RETURN/YR", "ADMIN+FEE/YR", "USABILITY", "COMPOSITE")
+	fmt.Println(strings.Repeat("─", 112))
+
+	for _, res := range dataset.Evaluations {
+		color := colorReset
+		if res.Rank == 1 {
+			color = colorGreen + colorBold
+		} else if res.Rank <= 3 {
+			color = colorYellow
+		}
+
+		netReturnStr := fmt.Sprintf("Rp %s", core.FormatIDR(int(res.NetAnnualBenefit)))
+		if res.NetAnnualBenefit < 0 {
+			netReturnStr = fmt.Sprintf("-Rp %s", core.FormatIDR(int(-res.NetAnnualBenefit)))
+		}
+		adminCostStr := fmt.Sprintf("Rp %s", core.FormatIDR(int(res.AnnualMaintenanceCost+res.AnnualTransferCost)))
+
+		fmt.Printf("%s%-5d %-26s %-16s %-10.2f%% %-15s %-15s %-10d %.1f%s\n",
+			color, res.Rank, res.BankName, res.BankType, res.EffectiveNetAPY, netReturnStr, adminCostStr, res.UsabilityIndex, res.CompositeScore, colorReset)
+	}
+
+	fmt.Println(strings.Repeat("─", 112))
+	fmt.Printf("\n%s💡 Executive Retailer Takeaways:%s\n", colorBold, colorReset)
+	for i := 0; i < 4 && i < len(dataset.Evaluations); i++ {
+		r := dataset.Evaluations[i]
+		fmt.Printf(" %s#%d %s (%s):%s %s\n", colorGreen, r.Rank, r.BankName, r.AccountName, colorReset, r.RecommendationSummary)
+	}
+	fmt.Printf("\nSaved full dataset to %s\n\n", *outputPath)
+}
+
 func handleStatus() {
 	printBanner()
 	fmt.Println("📊 IndoScraping Storage & Dataset Status:")
@@ -367,6 +439,8 @@ func handleRun(args []string) {
 	area := fs.String("area", "jakarta/jakarta-barat/palmerah", "Target area for SewaKost")
 	date := fs.String("date", "", "Target date for news crawlers")
 	output := fs.String("output", "", "Custom output path")
+	profile := fs.String("profile", "micro", "Retailer operational profile: micro, sme, or corporate")
+	balance := fs.Float64("balance", 0, "Custom average idle balance in IDR")
 
 	_ = fs.Parse(args[1:])
 
@@ -553,6 +627,27 @@ func handleRun(args []string) {
 		if len(items) > sampleCount {
 			fmt.Printf("  ... and %d more benchmark ratings saved to %s\n", len(items)-sampleCount, out)
 		}
+
+	case "banking", "rates":
+		out := *output
+		if out == "" {
+			out = "data/banking/rates/latest.json"
+		}
+		dataset, err := banking.RunBankingRatesIngestion(banking.BankingOptions{
+			OutputPath:  out,
+			ProfileType: *profile,
+			IdleBalance: *balance,
+		})
+		if err != nil {
+			fmt.Printf("%s❌ [FAILED]%s Banking scraper error: %v\n", colorRed, colorReset, err)
+			return
+		}
+		fmt.Printf("%s✅ [SUCCESS]%s Evaluated %d banks across commercial & digital segments in %v\n", colorGreen, colorReset, len(dataset.Banks), time.Since(startTime))
+		for _, b := range dataset.Banks {
+			fmt.Printf("  • [%s] %s (%s) - Monthly Admin: Rp %s | QRIS: %s\n",
+				b.BankID, b.BankName, b.BankType, core.FormatIDR(int(b.MonthlyAdminFee)), b.QRISSettlementSpeed)
+		}
+		fmt.Printf("\nSaved dataset to %s. Run './bin/indoscraping best-bank' to view quantitative rankings.\n", out)
 
 	default:
 		fmt.Printf("%s❌ Unknown scraper key '%s'. Run 'indoscraping list' to view available keys.%s\n", colorRed, scraperKey, colorReset)

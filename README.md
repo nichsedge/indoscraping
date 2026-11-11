@@ -84,6 +84,8 @@ uv run indoscraping run lhkpn --query "Prabowo Subianto" --limit-articles 5
 # Execute via Go Native Engine (High-Performance / Termux)
 uv run indoscraping run sewakost --engine go --limit-pages 1
 uv run indoscraping run detik --engine go --limit-articles 5
+./bin/indoscraping run passmark
+./bin/indoscraping bijak-beli --limit-per-item 5
 ./bin/indoscraping run all --limit-items 3
 
 # Batch execute scrapers by category
@@ -124,7 +126,7 @@ uv run indoscraping publish-panganku --target all
 | `rumah123` | — | Rumah123 Listings | Property | ✅ | — |
 | `enterkomputer` | — | EnterKomputer Hardware | Hardware | ✅ | — |
 | `viraindo` | — | Viraindo PC Hardware | Hardware | ✅ | — |
-| `passmark` | — | PassMark Benchmarks | Hardware | ✅ | — |
+| `passmark` | — | PassMark Benchmarks | Hardware | ✅ | ✅ |
 | `lhkpn` | — | KPK LHKPN State Official Wealth | Governance | ✅ (Playwright) | — |
 | `panganku` | `pangan`, `tkpi` | Panganku.org Food & Nutrition (TKPI) | Food | ✅ | — |
 

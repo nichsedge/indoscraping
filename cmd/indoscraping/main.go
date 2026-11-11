@@ -10,8 +10,10 @@ import (
 	"time"
 
 	"github.com/nichsedge/indoscraping/pkg/browser"
+	"github.com/nichsedge/indoscraping/pkg/core"
 	"github.com/nichsedge/indoscraping/pkg/export"
 	"github.com/nichsedge/indoscraping/pkg/scrapers/ecommerce"
+	"github.com/nichsedge/indoscraping/pkg/scrapers/hardware"
 	"github.com/nichsedge/indoscraping/pkg/scrapers/news"
 	"github.com/nichsedge/indoscraping/pkg/scrapers/property"
 )
@@ -52,6 +54,8 @@ func main() {
 		handleStatus()
 	case "check-browser":
 		handleCheckBrowser()
+	case "bijak-beli":
+		handleBijakBeli(os.Args[2:])
 	case "export":
 		handleExport(os.Args[2:])
 	case "run":
@@ -71,12 +75,15 @@ func printUsage() {
 	fmt.Printf("%sCommands:%s\n", colorBold, colorReset)
 	fmt.Printf("  %slist%s                 List all registered scrapers\n", colorGreen, colorReset)
 	fmt.Printf("  %srun <scraper|all>%s    Execute a specific scraper or all concurrently\n", colorGreen, colorReset)
+	fmt.Printf("  %sbijak-beli%s           Run cross-retailer consumer staples price index (Alfamart vs Indomaret)\n", colorGreen, colorReset)
 	fmt.Printf("  %sexport csv [path]%s    Export JSON datasets into CSV format\n", colorGreen, colorReset)
 	fmt.Printf("  %sstatus%s               Check generated data metrics and files\n", colorGreen, colorReset)
 	fmt.Printf("  %scheck-browser%s        Detect system Chromium and verify browser engine\n", colorGreen, colorReset)
 	fmt.Println()
 	fmt.Printf("%sExamples:%s\n", colorBold, colorReset)
 	fmt.Println("  ./bin/indoscraping list")
+	fmt.Println("  ./bin/indoscraping bijak-beli --limit-per-item 5")
+	fmt.Println("  ./bin/indoscraping run passmark")
 	fmt.Println("  ./bin/indoscraping run detik --limit-articles 5")
 	fmt.Println("  ./bin/indoscraping run blibli --query kopi --limit-products 5")
 	fmt.Println("  ./bin/indoscraping run alfagift --query susu --limit-products 5")
@@ -165,6 +172,13 @@ var registry = []scraperInfo{
 		Engine:   "HTTP / HTML Parser",
 		Desc:     "Extracts boarding house & kost rental listings with room specs and prices.",
 	},
+	{
+		Key:      "passmark",
+		Name:     "PassMark Hardware Benchmarks",
+		Category: "Hardware",
+		Engine:   "HTTP / HTML Parser",
+		Desc:     "Extracts live PassMark GPU (G3D Mark) and CPU compute ratings for price-to-performance analysis.",
+	},
 }
 
 func handleList() {
@@ -228,6 +242,81 @@ func handleExport(args []string) {
 		fmt.Printf(" • %s\n", f)
 	}
 	fmt.Println()
+}
+
+func handleBijakBeli(args []string) {
+	printBanner()
+	fs := flag.NewFlagSet("bijak-beli", flag.ExitOnError)
+	limitPerItem := fs.Int("limit-per-item", 3, "Number of products per retailer per staple")
+	queriesStr := fs.String("queries", "minyak,beras,susu,gula,telur,mie", "Comma-separated list of staple query keywords")
+	outputPath := fs.String("output", "data/bijak_beli/latest.json", "Output JSON path")
+	fs.Parse(args)
+
+	fmt.Printf("%s🛒 [BIJAK-BELI]%s Initiating Consumer Staples Price Index Ingestion...\n", colorGreen, colorReset)
+	fmt.Printf("   Queries: %s | Limit per staple: %d\n\n", *queriesStr, *limitPerItem)
+
+	var queryList []string
+	for _, q := range strings.Split(*queriesStr, ",") {
+		q = strings.TrimSpace(q)
+		if q != "" {
+			queryList = append(queryList, q)
+		}
+	}
+
+	startTime := time.Now()
+	items, summaries, err := ecommerce.RunBijakBeli(ecommerce.BijakBeliOptions{
+		Queries:      queryList,
+		LimitPerItem: *limitPerItem,
+		OutputPath:   *outputPath,
+	})
+	if err != nil {
+		fmt.Printf("%s❌ [FAILED]%s Bijak-Beli ingestion error: %v\n", colorRed, colorReset, err)
+		return
+	}
+
+	fmt.Printf("\n%s📊 [BIJAK-BELI SUMMARY] Price Diffusion & Store Comparison:%s\n", colorBold, colorReset)
+	fmt.Printf("%-12s %-16s %-16s %-16s %-16s %s\n", "CATEGORY", "ALFAMART MIN", "ALFAMART AVG", "INDOMARET MIN", "INDOMARET AVG", "CHEAPEST")
+	fmt.Println(strings.Repeat("─", 88))
+
+	for _, s := range summaries {
+		alfaMinStr := fmt.Sprintf("Rp %s", core.FormatIDR(s.AlfaMinPrice))
+		if s.AlfaMinPrice == 0 {
+			alfaMinStr = "N/A"
+		}
+		alfaAvgStr := fmt.Sprintf("Rp %s", core.FormatIDR(int(s.AlfaAvgPrice)))
+		if s.AlfaAvgPrice == 0 {
+			alfaAvgStr = "N/A"
+		}
+		indoMinStr := fmt.Sprintf("Rp %s", core.FormatIDR(s.IndoMinPrice))
+		if s.IndoMinPrice == 0 {
+			indoMinStr = "N/A"
+		}
+		indoAvgStr := fmt.Sprintf("Rp %s", core.FormatIDR(int(s.IndoAvgPrice)))
+		if s.IndoAvgPrice == 0 {
+			indoAvgStr = "N/A"
+		}
+
+		cheapestColor := colorGreen
+		if s.CheapestStore == "alfamart" {
+			cheapestColor = colorYellow
+		} else if s.CheapestStore == "indomaret" {
+			cheapestColor = colorCyan
+		}
+
+		fmt.Printf("%s%-12s%s %-16s %-16s %-16s %-16s %s%-14s%s\n",
+			colorBold, s.Category, colorReset,
+			alfaMinStr, alfaAvgStr,
+			indoMinStr, indoAvgStr,
+			cheapestColor, strings.ToUpper(s.CheapestStore), colorReset,
+		)
+	}
+
+	fmt.Println(strings.Repeat("─", 88))
+	csvPath := strings.TrimSuffix(*outputPath, ".json") + ".csv"
+	_ = export.JSONToCSV(*outputPath, csvPath)
+	fmt.Printf("%s✅ Ingested %d items across %d staples in %v%s\n",
+		colorGreen, len(items), len(summaries), time.Since(startTime), colorReset)
+	fmt.Printf("   JSON: %s\n   CSV:  %s\n\n", *outputPath, csvPath)
 }
 
 func handleStatus() {
@@ -438,6 +527,31 @@ func handleRun(args []string) {
 		fmt.Printf("%s✅ [SUCCESS]%s Fetched %d SewaKost listings in %v\n", colorGreen, colorReset, len(listings), time.Since(startTime))
 		for i, item := range listings {
 			fmt.Printf("  %d. [%s] %s (%s) - %s\n     🔗 %s\n", i+1, item.Type, item.Title, item.PriceRaw, item.Area, item.URL)
+		}
+
+	case "passmark":
+		out := *output
+		if out == "" {
+			out = "data/benchmarks/passmark/latest.json"
+		}
+		items, err := hardware.ScrapePassMark(hardware.PassMarkOptions{
+			OutputPath: out,
+		})
+		if err != nil {
+			fmt.Printf("%s❌ [FAILED]%s PassMark scraper error: %v\n", colorRed, colorReset, err)
+			return
+		}
+		fmt.Printf("%s✅ [SUCCESS]%s Fetched %d PassMark benchmark ratings in %v\n", colorGreen, colorReset, len(items), time.Since(startTime))
+		sampleCount := 10
+		if len(items) < sampleCount {
+			sampleCount = len(items)
+		}
+		for i := 0; i < sampleCount; i++ {
+			item := items[i]
+			fmt.Printf("  %d. [%s / %s] %s (Score: %d) - %s\n", i+1, item.Category, item.Segment, item.Name, item.Score, item.Benchmark)
+		}
+		if len(items) > sampleCount {
+			fmt.Printf("  ... and %d more benchmark ratings saved to %s\n", len(items)-sampleCount, out)
 		}
 
 	default:

@@ -86,6 +86,8 @@ uv run indoscraping publish-panganku --target all
 # Go Engine Direct Execution
 ./bin/indoscraping run cnbc --limit-articles 5
 ./bin/indoscraping run sewakost --limit-pages 1
+./bin/indoscraping run passmark
+./bin/indoscraping bijak-beli --limit-per-item 5
 ./bin/indoscraping run all --limit-items 3
 ./bin/indoscraping export csv
 ```
@@ -166,7 +168,7 @@ data/
 | `rumah123` | — | Rumah123 Listings | Property | `src/indoscraping/scraper/property/rumah123.py` | — |
 | `enterkomputer` | — | EnterKomputer Hardware | Hardware | `src/indoscraping/scraper/hardware/enterkomputer.py` | — |
 | `viraindo` | — | Viraindo PC Hardware | Hardware | `src/indoscraping/scraper/hardware/viraindo.py` | — |
-| `passmark` | — | PassMark Benchmarks | Hardware | `src/indoscraping/scraper/hardware/passmark.py` | — |
+| `passmark` | — | PassMark Benchmarks | Hardware | `src/indoscraping/scraper/hardware/passmark.py` | `pkg/scrapers/hardware/passmark.go` |
 | `lhkpn` | — | KPK LHKPN State Official Wealth | Governance | `src/indoscraping/scraper/governance/lhkpn.py` | — |
 | `panganku` | `pangan`, `tkpi` | Panganku.org Food & Nutrition | Food | `src/indoscraping/scraper/food/panganku.py` | — |
 

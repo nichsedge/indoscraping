@@ -11,18 +11,18 @@ import (
 )
 
 type PropertyListing struct {
-	ID            int    `json:"id"`
-	Code          string `json:"code"`
-	Name          string `json:"name"`
-	ApartmentName string `json:"apartment_name"`
-	PriceRaw      string `json:"priceRaw"`
-	PriceNumeric  int    `json:"priceNumeric"`
-	Bedroom       int    `json:"bedroom"`
-	Bathroom      int    `json:"bathroom"`
-	UnitArea      int    `json:"unit_area"`
-	Tower         string `json:"tower"`
-	URL           string `json:"url"`
-	ScrapedAt     string `json:"scraped_at"`
+	ID            int     `json:"id"`
+	Code          string  `json:"code"`
+	Name          string  `json:"name"`
+	ApartmentName string  `json:"apartment_name"`
+	PriceRaw      string  `json:"priceRaw"`
+	PriceNumeric  int     `json:"priceNumeric"`
+	Bedroom       int     `json:"bedroom"`
+	Bathroom      int     `json:"bathroom"`
+	UnitArea      float64 `json:"unit_area"`
+	Tower         string  `json:"tower"`
+	URL           string  `json:"url"`
+	ScrapedAt     string  `json:"scraped_at"`
 }
 
 type Jendela360Options struct {
@@ -46,7 +46,7 @@ func ScrapeJendela360(opts Jendela360Options) ([]PropertyListing, error) {
 		apiURL := fmt.Sprintf("https://api.jendela360.com/api/site/search-list?listing_type_id=1&type=0&page=%d&duration_filter=yearly", page)
 		req, err := http.NewRequest("GET", apiURL, nil)
 		if err != nil {
-			continue
+			return nil, fmt.Errorf("jendela360: failed creating page %d request: %w", page, err)
 		}
 		req.Header.Set("origin", "https://jendela360.com")
 		req.Header.Set("referer", "https://jendela360.com/")
@@ -54,28 +54,28 @@ func ScrapeJendela360(opts Jendela360Options) ([]PropertyListing, error) {
 
 		resp, err := client.Do(req)
 		if err != nil {
-			continue
+			return nil, fmt.Errorf("jendela360: failed requesting page %d: %w", page, err)
 		}
 
 		var apiResp struct {
 			Data []struct {
-				ID            int    `json:"id"`
-				Code          string `json:"code"`
-				Name          string `json:"name"`
-				Price         int    `json:"price"`
-				Bedroom       int    `json:"bedroom"`
-				Bathroom      int    `json:"bathroom"`
-				UnitArea      int    `json:"unit_area"`
-				Tower         string `json:"tower"`
-				ApartmentName string `json:"apartment_name"`
-				ApartmentSlug string `json:"apartment_slug"`
+				ID            int     `json:"id"`
+				Code          string  `json:"code"`
+				Name          string  `json:"name"`
+				Price         int     `json:"price"`
+				Bedroom       int     `json:"bedroom"`
+				Bathroom      int     `json:"bathroom"`
+				UnitArea      float64 `json:"unit_area"`
+				Tower         string  `json:"tower"`
+				ApartmentName string  `json:"apartment_name"`
+				ApartmentSlug string  `json:"apartment_slug"`
 			} `json:"data"`
 		}
 
 		err = json.NewDecoder(resp.Body).Decode(&apiResp)
 		resp.Body.Close()
 		if err != nil {
-			continue
+			return nil, fmt.Errorf("jendela360: failed decoding page %d JSON: %w", page, err)
 		}
 
 		for _, item := range apiResp.Data {

@@ -25,9 +25,10 @@ def test_scrapers_catalog():
     assert "viraindo" in SCRAPERS
     assert "lhkpn" in SCRAPERS
     assert "panganku" in SCRAPERS
+    assert "banking" in SCRAPERS
 
     categories = {info["category"] for info in SCRAPERS.values()}
-    assert categories == {"News", "E-Commerce", "Property", "Hardware", "Governance", "Food"}
+    assert categories == {"News", "E-Commerce", "Property", "Hardware", "Governance", "Food", "Banking"}
 
 
 def test_list_scrapers_table():

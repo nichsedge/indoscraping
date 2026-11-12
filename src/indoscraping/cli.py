@@ -477,7 +477,7 @@ def inspect_scraper_data(sid: str) -> None:
         console.print(f"[bold red]Error reading {out_path}: {e}[/bold red]")
         return
 
-    records = data if isinstance(data, list) else data.get("items", data.get("data", [data]))
+    records = data if isinstance(data, list) else data.get("items", data.get("data", data.get("banks", [data])))
     total = len(records) if isinstance(records, list) else 1
 
     console.print(Panel(
@@ -504,11 +504,15 @@ def inspect_scraper_data(sid: str) -> None:
             table.add_row(str(idx), str(item)[:35], "-", "-")
             continue
 
-        title = item.get("title") or item.get("productName") or item.get("name") or item.get("Nama") or item.get("Kode") or "Unknown"
+        title = item.get("title") or item.get("productName") or item.get("name") or item.get("Nama") or item.get("Kode") or item.get("bank_name") or "Unknown"
         title = str(title).strip().replace("\n", " ")[:35]
 
         key_info = []
-        if "total_harta" in item:
+        if "bank_type" in item:
+            key_info.append(f"{item.get('bank_type')}")
+            if "monthly_admin_fee" in item:
+                key_info.append(f"Admin: Rp {item['monthly_admin_fee']:,}")
+        elif "total_harta" in item:
             key_info.append(f"Harta: {item['total_harta']}")
         elif "price" in item or "min_price" in item or "priceRaw" in item or "price_raw" in item:
             p = item.get("price_raw") or item.get("priceRaw") or item.get("price") or item.get("min_price")

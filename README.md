@@ -84,6 +84,8 @@ uv run indoscraping run lhkpn --query "Prabowo Subianto" --limit-articles 5
 # Execute via Go Native Engine (High-Performance / Termux)
 uv run indoscraping run sewakost --engine go --limit-pages 1
 uv run indoscraping run detik --engine go --limit-articles 5
+./bin/indoscraping run cnbc --categories market,research,news --limit-articles -1
+GCS_BUCKET=your-bucket ./scripts/cnbc_daily_gcs.sh
 ./bin/indoscraping run passmark
 ./bin/indoscraping run banking
 ./bin/indoscraping best-bank --profile micro

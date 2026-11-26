@@ -159,23 +159,34 @@ def scrape_article(url):
 
         # Extract author
         author_tag = soup.find("div", class_="mb-1 text-base font-semibold")
-        author = author_tag.get_text(strip=True) if author_tag else "No author found"
+        if author_tag:
+            author = author_tag.get_text(strip=True)
+        else:
+            author_meta = soup.find("meta", attrs={"name": "author"})
+            author = author_meta.get("content", "").strip() if author_meta else "No author found"
         logger.debug(f"Extracted author: {author}")
 
+        # Extract summary and lead image from OpenGraph/meta tags
+        summary_meta = soup.find("meta", attrs={"property": "og:description"}) or soup.find("meta", attrs={"name": "description"})
+        summary = summary_meta.get("content", "").strip() if summary_meta else ""
+
+        image_meta = soup.find("meta", attrs={"property": "og:image"})
+        image = image_meta.get("content", "").strip() if image_meta else ""
+
         # Extract main article content
-        content_div = soup.find("div", class_="detail-text")
+        content_div = soup.find("div", class_="detail-text") or soup.find("div", class_="detail_text")
         paragraphs = content_div.find_all("p") if content_div else []
-        article_text = '\n\n'.join(p.get_text(strip=True) for p in paragraphs)
+        article_text = '\n\n'.join(p.get_text(strip=True) for p in paragraphs if p.get_text(strip=True))
         logger.debug(f"Extracted content length: {len(article_text)} characters")
 
-        # Extract tags
-        tag_section = soup.find('section', class_='px-4 py-4 stretch bg-white')
+        # Extract tags (deduplicated, preserving order)
         tags = []
-        if tag_section:
-            for tag in tag_section.find_all('a'):
-                tag_text = tag.get_text(strip=True)
-                tag_href = tag['href']
-                tags.append((tag_text, tag_href))
+        seen_tags = set()
+        for tag in soup.select('a[href*="/tag/"]'):
+            tag_text = tag.get_text(strip=True).lstrip("#").strip()
+            if tag_text and tag_text.lower() not in seen_tags:
+                seen_tags.add(tag_text.lower())
+                tags.append(tag_text)
         logger.debug(f"Extracted {len(tags)} tags")
 
         elapsed_time = time.time() - start_time
@@ -185,6 +196,8 @@ def scrape_article(url):
             "title": title,
             "date": date,
             "author": author,
+            "summary": summary,
+            "image": image,
             "content": article_text,
             "tags": tags,
             "url": url

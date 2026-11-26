@@ -194,13 +194,24 @@ def test_cnn_scrape_article_mock():
 def test_cnbc_scrape_article_mock():
     html = """
     <html>
-      <head><title>CNBC Market Update</title></head>
+      <head>
+        <title>CNBC Market Update</title>
+        <meta name="author" content="Market Reporter" />
+        <meta property="og:description" content="Ringkasan pasar hari ini." />
+        <meta property="og:image" content="https://example.com/ihsg.jpg" />
+      </head>
       <body>
         <h1>CNBC Market Update</h1>
         <div class="text-cm text-gray">22 October 2026 15:00</div>
-        <div class="author">Market Reporter</div>
-        <div class="detail_text">
+        <div class="mb-1 text-base font-semibold">Market Reporter</div>
+        <div class="detail-text">
           <p>Indeks Harga Saham Gabungan (IHSG) menguat signifikan hari ini.</p>
+          <p>Volume transaksi meningkat.</p>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <a href="https://www.cnbcindonesia.com/tag/ihsg">#ihsg</a>
+          <a href="https://www.cnbcindonesia.com/tag/pasar-saham">#pasar saham</a>
+          <a href="https://www.cnbcindonesia.com/tag/ihsg">#ihsg</a>
         </div>
       </body>
     </html>
@@ -213,6 +224,12 @@ def test_cnbc_scrape_article_mock():
         data = cnbc_scrape_article("https://www.cnbcindonesia.com/market/sample")
         assert data["title"] == "CNBC Market Update"
         assert "22 October 2026" in data["date"]
+        assert data["author"] == "Market Reporter"
+        assert data["summary"] == "Ringkasan pasar hari ini."
+        assert data["image"] == "https://example.com/ihsg.jpg"
+        assert "IHSG" in data["content"]
+        assert "Volume transaksi meningkat." in data["content"]
+        assert data["tags"] == ["ihsg", "pasar saham"]
 
 
 # Narasi Tests

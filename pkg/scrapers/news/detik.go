@@ -11,11 +11,16 @@ import (
 )
 
 type Article struct {
-	Title       string `json:"title"`
-	URL         string `json:"url"`
-	Category    string `json:"category"`
-	PublishedAt string `json:"published_at"`
-	ScrapedAt   string `json:"scraped_at"`
+	Title       string   `json:"title"`
+	URL         string   `json:"url"`
+	Category    string   `json:"category"`
+	PublishedAt string   `json:"published_at"`
+	ScrapedAt   string   `json:"scraped_at"`
+	Author      string   `json:"author,omitempty"`
+	Summary     string   `json:"summary,omitempty"`
+	Image       string   `json:"image,omitempty"`
+	Content     string   `json:"content,omitempty"`
+	Tags        []string `json:"tags,omitempty"`
 }
 
 type DetikOptions struct {

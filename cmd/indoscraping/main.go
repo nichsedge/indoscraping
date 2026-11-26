@@ -437,7 +437,8 @@ func handleRun(args []string) {
 	limitItems := fs.Int("limit-items", 5, "Default item limit when running 'all'")
 	query := fs.String("query", "susu", "Search query for e-commerce scrapers")
 	area := fs.String("area", "jakarta/jakarta-barat/palmerah", "Target area for SewaKost")
-	date := fs.String("date", "", "Target date for news crawlers")
+	date := fs.String("date", "", "Target date for news crawlers (YYYY-MM-DD or YYYY/MM/DD)")
+	categories := fs.String("categories", "", "Comma-separated category slugs (e.g. market,research,news)")
 	output := fs.String("output", "", "Custom output path")
 	profile := fs.String("profile", "micro", "Retailer operational profile: micro, sme, or corporate")
 	balance := fs.Float64("balance", 0, "Custom average idle balance in IDR")
@@ -470,8 +471,17 @@ func handleRun(args []string) {
 		}
 
 	case "cnbc":
+		var catList []string
+		if *categories != "" {
+			for _, c := range strings.Split(*categories, ",") {
+				if trimmed := strings.TrimSpace(c); trimmed != "" {
+					catList = append(catList, trimmed)
+				}
+			}
+		}
 		articles, err := news.ScrapeCNBC(news.CNBCOptions{
 			Date:          *date,
+			Categories:    catList,
 			LimitArticles: *limitArticles,
 			OutputPath:    *output,
 		})

@@ -90,6 +90,8 @@ uv run indoscraping run banking
 
 # Go Engine Direct Execution
 ./bin/indoscraping run cnbc --limit-articles 5
+./bin/indoscraping run cnbc --categories market,research,news --limit-articles -1
+GCS_BUCKET=your-bucket ./scripts/cnbc_daily_gcs.sh
 ./bin/indoscraping run sewakost --limit-pages 1
 ./bin/indoscraping run passmark
 ./bin/indoscraping run banking

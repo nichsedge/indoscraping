@@ -1,0 +1,20 @@
+# Lightweight Cloud Run Job image for daily CNBC D-1 -> GCS ingestion
+FROM golang:1.26-alpine AS builder
+
+WORKDIR /src
+COPY go.mod go.sum ./
+RUN go mod download
+
+COPY cmd/ cmd/
+COPY pkg/ pkg/
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /out/indoscraping ./cmd/indoscraping
+
+FROM alpine:3.21
+RUN apk add --no-cache bash ca-certificates coreutils curl jq tzdata
+
+WORKDIR /app
+COPY --from=builder /out/indoscraping /app/bin/indoscraping
+COPY scripts/cnbc_daily_gcs.sh /app/scripts/cnbc_daily_gcs.sh
+RUN chmod +x /app/scripts/cnbc_daily_gcs.sh && mkdir -p /app/data/news/cnbc/history
+
+ENTRYPOINT ["/app/scripts/cnbc_daily_gcs.sh"]

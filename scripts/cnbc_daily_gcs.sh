@@ -44,10 +44,24 @@ send_telegram() {
 on_error() {
   local exit_code=$?
   local line_no=$1
-  send_telegram "❌ [always-free-vm] CNBC D-1 FAILED (${TARGET_DATE}) at line ${line_no} (exit ${exit_code}). Check ~/indoscraping/cnbc_daily.log"
+  send_telegram "❌ [cnbc-daily-gcs] CNBC D-1 FAILED (${TARGET_DATE}) at line ${line_no} (exit ${exit_code})."
   exit "$exit_code"
 }
 trap 'on_error $LINENO' ERR
+
+get_gcs_access_token() {
+  if token_json=$(curl -fsS --max-time 3 -H "Metadata-Flavor: Google" \
+    "http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token" 2>/dev/null); then
+    echo "$token_json" | jq -r '.access_token'
+    return 0
+  fi
+  if command -v gcloud >/dev/null 2>&1; then
+    gcloud auth print-access-token
+    return 0
+  fi
+  echo "Error: neither GCP metadata server nor gcloud CLI available for GCS auth" >&2
+  return 1
+}
 
 if [[ ! -x "$BIN_PATH" ]]; then
   echo "Error: Go binary not found or not executable at $BIN_PATH" >&2
@@ -65,11 +79,20 @@ if [[ ! -s "$LOCAL_FILE" ]]; then
   exit 1
 fi
 
-GCS_URI="gs://${GCS_BUCKET}/news/cnbc/date=${TARGET_DATE}/data.json"
-gcloud storage cp "$LOCAL_FILE" "$GCS_URI"
+OBJECT_NAME="news/cnbc/date=${TARGET_DATE}/data.json"
+OBJECT_NAME_ENC="news%2Fcnbc%2Fdate%3D${TARGET_DATE}%2Fdata.json"
+GCS_URI="gs://${GCS_BUCKET}/${OBJECT_NAME}"
+
+ACCESS_TOKEN="$(get_gcs_access_token)"
+curl -fsS -o /dev/null -X POST \
+  -H "Authorization: Bearer ${ACCESS_TOKEN}" \
+  -H "Content-Type: application/json" \
+  --data-binary "@${LOCAL_FILE}" \
+  "https://storage.googleapis.com/upload/storage/v1/b/${GCS_BUCKET}/o?uploadType=media&name=${OBJECT_NAME_ENC}"
+
 SIZE_BYTES=$(wc -c < "$LOCAL_FILE")
 echo "Uploaded ${LOCAL_FILE} (${SIZE_BYTES} bytes) -> ${GCS_URI}"
 
 if [[ "$TELEGRAM_NOTIFY_SUCCESS" == "1" ]]; then
-  send_telegram "✅ [always-free-vm] CNBC D-1 (${TARGET_DATE}) uploaded: ${SIZE_BYTES} bytes -> ${GCS_URI}"
+  send_telegram "✅ [cnbc-daily-gcs] CNBC D-1 (${TARGET_DATE}) uploaded: ${SIZE_BYTES} bytes -> ${GCS_URI}"
 fi
